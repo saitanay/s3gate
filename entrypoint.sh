@@ -23,6 +23,5 @@ EOF
 echo "Starting S3 gateway on port ${PORT}..."
 exec rclone serve s3 storagebox: \
   --addr ":${PORT}" \
-  --auth-key "${ACCESS_KEY}" \
-  --auth-secret "${SECRET_KEY}" \
+  --auth-key "${ACCESS_KEY},${SECRET_KEY}" \
   --vfs-cache-mode full
