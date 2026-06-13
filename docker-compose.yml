@@ -1,0 +1,9 @@
+services:
+  s3gate:
+    build: .
+    container_name: s3gate
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./config.json:/config/config.json:ro
+    restart: unless-stopped
