@@ -13,11 +13,14 @@ mkdir -p /root/.config/rclone
 
 cat > /root/.config/rclone/rclone.conf <<EOF
 [storagebox]
-type = webdav
-url = https://${HOST}
-vendor = other
+type = sftp
+host = ${HOST}
+port = 23
 user = ${USERNAME}
 pass = $(rclone obscure "${PASSWORD}")
+shell_type = none
+md5sum_command = none
+sha1sum_command = none
 EOF
 
 echo "Starting S3 gateway on port ${PORT}..."
