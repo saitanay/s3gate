@@ -30,4 +30,10 @@ echo "Starting S3 gateway on port ${PORT}..."
 exec rclone serve s3 storagebox:./ \
   --addr ":${PORT}" \
   --auth-key "${ACCESS_KEY},${SECRET_KEY}" \
-  --vfs-cache-mode full
+  --vfs-cache-mode full \
+  --transfers 4 \
+  --checkers 4 \
+  --sftp-concurrency 2 \
+  --low-level-retries 10 \
+  --retries 3 \
+  --contimeout 30s
