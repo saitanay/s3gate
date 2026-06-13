@@ -21,6 +21,7 @@ pass = $(rclone obscure "${PASSWORD}")
 shell_type = none
 md5sum_command = none
 sha1sum_command = none
+known_hosts_file = /dev/null
 EOF
 
 echo "Starting S3 gateway on port ${PORT}..."
