@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-CONFIG_FILE="/config/config.json"
+CONFIG_FILE="/app/config.json"
 
 HOST=$(jq -r '.storagebox.host' "$CONFIG_FILE")
 USERNAME=$(jq -r '.storagebox.username' "$CONFIG_FILE")

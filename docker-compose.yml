@@ -5,5 +5,5 @@ services:
     ports:
       - "9000:9000"
     volumes:
-      - ./config.json:/config/config.json:ro
+      - ./config.json:/app/config.json:ro
     restart: unless-stopped
