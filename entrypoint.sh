@@ -27,7 +27,7 @@ known_hosts_file = /root/.ssh/known_hosts
 EOF
 
 echo "Starting S3 gateway on port ${PORT}..."
-exec rclone serve s3 storagebox: \
+exec rclone serve s3 storagebox:./ \
   --addr ":${PORT}" \
   --auth-key "${ACCESS_KEY},${SECRET_KEY}" \
   --vfs-cache-mode full
