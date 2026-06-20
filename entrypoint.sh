@@ -44,8 +44,13 @@ known_hosts_file = /root/.ssh/known_hosts
 EOF
 
 echo "Starting S3 gateway on port ${PORT}..."
+# Start nginx (handles Expect: 100-continue for S3 clients)
+nginx
+echo "Nginx proxy started on port ${PORT}"
+
+# Rclone listens on internal port, nginx proxies from $PORT
 exec rclone serve s3 storagebox:./ \
-  --addr ":${PORT}" \
+  --addr ":9001" \
   --auth-key "${ACCESS_KEY},${SECRET_KEY}" \
   --vfs-cache-mode writes \
   --vfs-cache-max-size 2G \
