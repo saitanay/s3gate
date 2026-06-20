@@ -58,5 +58,4 @@ exec rclone serve s3 storagebox:./ \
   --retries 3 \
   --contimeout 30s \
   --no-checksum \
-  --log-level INFO \
-  -v
+  --log-level INFO
