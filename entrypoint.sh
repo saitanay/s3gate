@@ -53,12 +53,12 @@ exec rclone serve s3 storagebox:./ \
   --addr ":9001" \
   --auth-key "${ACCESS_KEY},${SECRET_KEY}" \
   --vfs-cache-mode writes \
-  --vfs-cache-max-size 2G \
+  --vfs-cache-max-size 10G \
   --vfs-write-back 0s \
   --cache-dir /tmp/vfs-cache \
-  --transfers 4 \
-  --checkers 4 \
-  --sftp-concurrency 2 \
+  --transfers 8 \
+  --checkers 8 \
+  --sftp-concurrency 8 \
   --low-level-retries 10 \
   --retries 3 \
   --contimeout 30s \
