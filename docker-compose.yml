@@ -19,7 +19,7 @@ services:
       - DODOPAY_API_KEY=6O3YFr_uKSM9CzzE.XglP1WVljH4G6pbuDdllXi4tpSTHC9Ykhvv0Mng1Tx583_sA
       - DODOPAY_PRODUCT_ID=pdt_0NhWToS9cKKtfWWhk8x1J
       - BASE_URL=https://bucketcheap.com
-      - ADMIN_EMAIL=tanay@saitanay.com
+      - ADMIN_EMAIL=bucketcheap@tanay.co.in
       - ADMIN_PASSWORD=BucketCheap2026!
       - PORT=9000
       - DB_PATH=/data/db/bucketcheap.db
