@@ -17,17 +17,15 @@ const dodopayBaseURL = "https://live.dodopayments.com"
 
 // DodoPay checkout session request
 type dodopayCheckoutRequest struct {
-	ProductCart []dodopayProduct `json:"product_cart"`
-	Customer   dodopayCustomer  `json:"customer"`
-	ReturnURL  string           `json:"return_url"`
-	Metadata   map[string]string `json:"metadata"`
-	PaymentLink bool            `json:"payment_link"`
+	ProductCart []dodopayProduct  `json:"product_cart"`
+	Customer    dodopayCustomer   `json:"customer"`
+	ReturnURL   string            `json:"return_url"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 type dodopayProduct struct {
 	ProductID string `json:"product_id"`
 	Quantity  int    `json:"quantity"`
-	Amount    int    `json:"amount,omitempty"`
 }
 
 type dodopayCustomer struct {
@@ -36,8 +34,8 @@ type dodopayCustomer struct {
 }
 
 type dodopayCheckoutResponse struct {
-	PaymentID   string `json:"payment_id"`
-	PaymentLink string `json:"payment_link"`
+	SessionID   string `json:"session_id"`
+	CheckoutURL string `json:"checkout_url"`
 }
 
 // HandleRecharge creates a DodoPay payment link and redirects user
@@ -65,13 +63,12 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 
 	reqBody := dodopayCheckoutRequest{
 		ProductCart: []dodopayProduct{
-			{ProductID: productID, Quantity: 1, Amount: int(amountPaise)},
+			{ProductID: productID, Quantity: 1},
 		},
 		Customer: dodopayCustomer{
 			Email: user.Email,
 		},
-		PaymentLink: true,
-		ReturnURL:   fmt.Sprintf("%s/dashboard/billing/callback?user_id=%s&amount=%d", baseURL, user.ID, amountPaise),
+		ReturnURL: fmt.Sprintf("%s/dashboard/billing/callback?user_id=%s&amount=%d", baseURL, user.ID, amountPaise),
 		Metadata: map[string]string{
 			"user_id":      user.ID,
 			"amount_paise": fmt.Sprintf("%d", amountPaise),
@@ -79,7 +76,7 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", dodopayBaseURL+"/payments", bytes.NewReader(body))
+	req, _ := http.NewRequest("POST", dodopayBaseURL+"/checkouts", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 
@@ -101,10 +98,10 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 	var dodopayResp dodopayCheckoutResponse
 	json.Unmarshal(respBody, &dodopayResp)
 
-	if dodopayResp.PaymentLink != "" {
-		http.Redirect(w, r, dodopayResp.PaymentLink, http.StatusSeeOther)
+	if dodopayResp.CheckoutURL != "" {
+		http.Redirect(w, r, dodopayResp.CheckoutURL, http.StatusSeeOther)
 	} else {
-		log.Printf("ERROR DodoPay no payment link in response: %s", string(respBody))
+		log.Printf("ERROR DodoPay no checkout_url in response: %s", string(respBody))
 		http.Redirect(w, r, "/dashboard/billing", http.StatusSeeOther)
 	}
 }

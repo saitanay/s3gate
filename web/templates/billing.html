@@ -33,15 +33,9 @@
             <div class="bg-white p-6 rounded-xl border">
                 <h3 class="text-sm font-medium text-gray-500 mb-3">Recharge Wallet</h3>
                 <form method="POST" action="/dashboard/billing/recharge">
-                    <div class="flex space-x-2">
-                        <select name="amount" class="flex-1 px-3 py-2 border rounded-lg text-sm">
-                            <option value="99900">₹999 (≈10 months)</option>
-                            <option value="199900">₹1,999 (≈20 months)</option>
-                            <option value="499900">₹4,999 (≈50 months)</option>
-                        </select>
-                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">Pay</button>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-2">Minimum recharge ₹999. Powered by DodoPay.</p>
+                    <input type="hidden" name="amount" value="99900">
+                    <button type="submit" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg text-sm hover:bg-green-700 font-medium">Recharge ₹999</button>
+                    <p class="text-xs text-gray-500 mt-2">Minimum recharge ₹999 (≈10 months). Powered by DodoPay.</p>
                 </form>
             </div>
         </div>
