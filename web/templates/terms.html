@@ -1,0 +1,51 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="min-h-screen">
+    <nav class="bg-white border-b">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-green-600">BucketCheap</a>
+        </div>
+    </nav>
+
+    <div class="max-w-3xl mx-auto px-4 py-12">
+        <h1 class="text-3xl font-bold mb-8">Terms & Conditions</h1>
+        <div class="prose prose-gray max-w-none space-y-6 text-gray-700">
+            <p><strong>Last updated:</strong> June 21, 2026</p>
+
+            <h2 class="text-xl font-bold mt-6">1. Service Description</h2>
+            <p>BucketCheap provides S3-compatible cloud object storage. We offer 1 TB of storage with unlimited bandwidth, accessible via standard S3 APIs, AWS CLI, and any S3-compatible SDK.</p>
+
+            <h2 class="text-xl font-bold mt-6">2. Pricing</h2>
+            <ul class="list-disc pl-6 space-y-2">
+                <li><strong>Monthly Plan:</strong> ₹99/month for 1 TB storage with unlimited bandwidth</li>
+                <li><strong>Yearly Plan:</strong> ₹999 one-time payment gives ₹1,188 wallet credits (equivalent to 12 months)</li>
+            </ul>
+            <p>All prices are in Indian Rupees (INR). Payments are prepaid via wallet recharge.</p>
+
+            <h2 class="text-xl font-bold mt-6">3. Account & Trial</h2>
+            <p>New users receive a 7-day free trial. After trial expiry, a wallet balance of at least ₹99 is required to continue service. Accounts with zero balance are suspended after 7 days and data is deleted 7 days after suspension.</p>
+
+            <h2 class="text-xl font-bold mt-6">4. Acceptable Use</h2>
+            <p>You may not use BucketCheap for illegal content, malware distribution, copyright infringement, or any activity that violates Indian law. We reserve the right to terminate accounts violating these terms without refund.</p>
+
+            <h2 class="text-xl font-bold mt-6">5. Data & Privacy</h2>
+            <p>We do not access, read, or share your stored files. We collect only your email address for authentication. No data is shared with third parties except payment processors (Cashfree) for transaction processing.</p>
+
+            <h2 class="text-xl font-bold mt-6">6. Availability</h2>
+            <p>We aim for 99.9% uptime but do not guarantee it. We are not liable for data loss due to hardware failure, though we make reasonable efforts to maintain data integrity.</p>
+
+            <h2 class="text-xl font-bold mt-6">7. Limitation of Liability</h2>
+            <p>BucketCheap's total liability is limited to the amount you have paid in the last 12 months. We are not liable for indirect, incidental, or consequential damages.</p>
+
+            <h2 class="text-xl font-bold mt-6">8. Changes to Terms</h2>
+            <p>We may update these terms with 30 days notice via email. Continued use after changes constitutes acceptance.</p>
+
+            <h2 class="text-xl font-bold mt-6">9. Governing Law</h2>
+            <p>These terms are governed by the laws of India. Disputes shall be subject to the jurisdiction of courts in Hyderabad, Telangana.</p>
+
+            <h2 class="text-xl font-bold mt-6">10. Contact</h2>
+            <p>For questions about these terms, contact us at <a href="mailto:bucketcheap@tanay.co.in" class="text-green-600 underline">bucketcheap@tanay.co.in</a></p>
+        </div>
+    </div>
+</div>
+{{end}}

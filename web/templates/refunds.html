@@ -1,0 +1,43 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="min-h-screen">
+    <nav class="bg-white border-b">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-green-600">BucketCheap</a>
+        </div>
+    </nav>
+
+    <div class="max-w-3xl mx-auto px-4 py-12">
+        <h1 class="text-3xl font-bold mb-8">Refunds & Cancellations</h1>
+        <div class="prose prose-gray max-w-none space-y-6 text-gray-700">
+            <p><strong>Last updated:</strong> June 21, 2026</p>
+
+            <h2 class="text-xl font-bold mt-6">Refund Policy</h2>
+            <p>BucketCheap operates on a prepaid wallet model. Wallet recharges are eligible for refund under the following conditions:</p>
+
+            <ul class="list-disc pl-6 space-y-2">
+                <li><strong>Unused credits:</strong> If you have not used any storage after recharge, you may request a full refund within 7 days of payment.</li>
+                <li><strong>Partial refunds:</strong> If you have used the service, we will refund the unused wallet balance (minus any consumed months at ₹99/month).</li>
+                <li><strong>Processing time:</strong> Refunds are processed within 5-7 business days to the original payment method.</li>
+            </ul>
+
+            <h2 class="text-xl font-bold mt-6">Cancellation Policy</h2>
+            <ul class="list-disc pl-6 space-y-2">
+                <li>You may cancel your account at any time from the dashboard settings.</li>
+                <li>Upon cancellation, your remaining wallet balance will be refunded (minus consumed usage).</li>
+                <li>Your data will be retained for 7 days after cancellation, then permanently deleted.</li>
+                <li>Free trial users can cancel without any charges.</li>
+            </ul>
+
+            <h2 class="text-xl font-bold mt-6">How to Request a Refund</h2>
+            <p>Email us at <a href="mailto:bucketcheap@tanay.co.in" class="text-green-600 underline">bucketcheap@tanay.co.in</a> with your registered email and reason for refund. We will process it within 2 business days.</p>
+
+            <h2 class="text-xl font-bold mt-6">Non-Refundable Cases</h2>
+            <ul class="list-disc pl-6 space-y-2">
+                <li>Accounts terminated for Terms & Conditions violation</li>
+                <li>Refund requests made more than 30 days after payment</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{{end}}

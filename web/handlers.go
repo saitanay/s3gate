@@ -35,6 +35,7 @@ func InitTemplates(dir string) {
 
 	pages := []string{
 		"home.html", "login.html", "contact.html",
+		"terms.html", "refunds.html",
 		"dashboard.html", "buckets.html", "keys.html",
 		"billing.html", "settings.html", "checkout.html",
 		"admin_login.html", "admin_dashboard.html",
@@ -56,6 +57,8 @@ func RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/auth/verify", handleVerify)
 	mux.HandleFunc("/logout", handleLogout)
 	mux.HandleFunc("/contact", handleContact)
+	mux.HandleFunc("/terms", handleTerms)
+	mux.HandleFunc("/refunds", handleRefunds)
 
 	// Dashboard (auth required)
 	mux.HandleFunc("/dashboard", AuthMiddleware(handleDashboard))
@@ -182,6 +185,14 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 
 func handleContact(w http.ResponseWriter, r *http.Request) {
 	render(w, "contact.html", nil)
+}
+
+func handleTerms(w http.ResponseWriter, r *http.Request) {
+	render(w, "terms.html", nil)
+}
+
+func handleRefunds(w http.ResponseWriter, r *http.Request) {
+	render(w, "refunds.html", nil)
 }
 
 // --- Dashboard Handlers ---
