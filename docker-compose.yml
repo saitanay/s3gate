@@ -13,9 +13,10 @@ services:
       - STORAGEBOX_PASSWORD=Tanay#5566778899
       - SMTP_HOST=smtp.purelymail.com
       - SMTP_PORT=587
-      - SMTP_USER=no-reply@postcard.rest
-      - SMTP_PASSWORD=jWUEQ8YaHSvifpg
-      - SMTP_FROM=no-reply@postcard.rest
+      - SMTP_USER=BucketCheap@postcard.rest
+      - SMTP_PASSWORD=Bu887783tCh3ap@20271986
+      - SMTP_FROM=BucketCheap@postcard.rest
+      - SMTP_FROM_NAME=Vishwak @ BucketCheap
       - CASHFREE_APP_ID=12663165ca5e2021833bd87e7a56136621
       - CASHFREE_SECRET_KEY=cfsk_ma_prod_69c988de553893e8f6621ff946cb20ef_17928f09
       - CASHFREE_WEBHOOK_SECRET=ow0yogt8xzpgoawa5krz

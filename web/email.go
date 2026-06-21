@@ -13,23 +13,31 @@ func SendMagicLink(email, token string) error {
 	user := os.Getenv("SMTP_USER")
 	pass := os.Getenv("SMTP_PASSWORD")
 	from := os.Getenv("SMTP_FROM")
+	fromName := os.Getenv("SMTP_FROM_NAME")
+	if fromName == "" {
+		fromName = "BucketCheap"
+	}
 	baseURL := os.Getenv("BASE_URL")
 
 	link := fmt.Sprintf("%s/auth/verify?token=%s", baseURL, token)
 
-	subject := "Sign in to BucketCheap"
-	body := fmt.Sprintf(`Hi,
+	subject := "Your sign-in link for BucketCheap"
+	body := fmt.Sprintf(`Hey there!
 
-Click this link to sign in to BucketCheap:
+Here's your magic link to sign in:
 
 %s
 
-This link expires in 15 minutes. If you didn't request this, ignore this email.
+This link is valid for 15 minutes. If you didn't request this, just ignore it.
 
-— BucketCheap`, link)
+Welcome to fair-priced S3 storage. 1 TB, unlimited bandwidth, ₹99/month — built for Indian developers who deserve better than AWS pricing.
 
-	msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n%s",
-		from, email, subject, body)
+Cheers,
+Vishwak @ BucketCheap
+https://bucketcheap.com`, link)
+
+	msg := fmt.Sprintf("From: %s <%s>\r\nTo: %s\r\nSubject: %s\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n%s",
+		fromName, from, email, subject, body)
 
 	auth := smtp.PlainAuth("", user, pass, host)
 	addr := fmt.Sprintf("%s:%s", host, port)
