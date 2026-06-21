@@ -4,8 +4,8 @@ WORKDIR /build
 COPY proxy/go.mod proxy/main.go ./
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o s3proxy main.go
 
-# Stage 2: Runtime with rclone
-FROM rclone/rclone:latest
+# Stage 2: Runtime with rclone beta (includes multipart streaming fix #7453)
+FROM rclone/rclone:beta
 RUN apk add --no-cache openssh-client
 COPY --from=builder /build/s3proxy /usr/local/bin/s3proxy
 COPY entrypoint.sh /entrypoint.sh
