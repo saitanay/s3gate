@@ -5,150 +5,153 @@
     <nav class="bg-white border-b">
         <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
             <a href="/" class="text-2xl font-bold text-green-600">BucketCheap</a>
-            <div class="space-x-4">
-                <a href="/login" class="text-gray-600 hover:text-gray-900">Login</a>
-                <a href="/login" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Start Free Trial</a>
+            <div class="flex items-center space-x-4">
+                <a href="/login" class="text-gray-600 hover:text-gray-900 text-sm">Login</a>
+                <a href="/login" class="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700 transition-colors">Start Free Trial</a>
             </div>
         </div>
     </nav>
 
     <!-- Hero -->
-    <section class="max-w-4xl mx-auto px-4 py-20 text-center">
-        <h1 class="text-5xl font-bold text-gray-900 mb-6"><span class="text-green-600">1 TB</span> Storage. <span class="text-green-600">Unlimited</span> Bandwidth. <span class="text-green-600">₹99</span>/month.</h1>
-        <p class="text-xl text-gray-600 mb-4">Fair-priced, S3-compatible object storage for Indian developers.</p>
-        <p class="text-lg text-gray-500 mb-8">Works with AWS CLI, any S3 SDK, rclone, Cyberduck.</p>
-        <a href="/login" class="inline-block bg-green-600 text-white text-lg px-8 py-4 rounded-lg hover:bg-green-700 shadow-lg">Start Free Trial — 7 days free</a>
-        <p class="text-gray-500 mt-4">No card required. Cancel anytime.</p>
-        <div class="flex items-center justify-center space-x-6 mt-6">
-            <div class="flex items-center space-x-2 text-gray-600">
-                <span class="text-2xl">🇮🇳</span>
-                <span class="text-sm font-medium">UPI Payments</span>
-            </div>
-            <img src="/static/make-in-india.jpg" alt="Make in India" class="h-12 rounded">
+    <section class="max-w-4xl mx-auto px-4 pt-24 pb-16 text-center">
+        <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight"><span class="text-green-600">1 TB</span> Storage. <span class="text-green-600">Unlimited</span> Bandwidth.<br><span class="text-green-600">₹99</span>/month.</h1>
+        <p class="text-xl text-gray-600 mb-2">Fair-priced, S3-compatible object storage for Indian developers.</p>
+        <p class="text-gray-500 mb-10">Works with AWS CLI, any S3 SDK, rclone, Cyberduck.</p>
+        <a href="/login" class="inline-block bg-green-600 text-white text-lg px-8 py-4 rounded-md hover:bg-green-700 transition-colors">Start Free Trial — 7 days free</a>
+        <p class="text-gray-400 text-sm mt-4">No card required. Cancel anytime.</p>
+        <div class="flex items-center justify-center gap-4 mt-8 text-sm text-gray-500">
+            <span class="flex items-center gap-1.5">🇮🇳 UPI Payments</span>
+            <span class="text-gray-300">·</span>
+            <img src="/static/make-in-india.jpg" alt="Make in India" class="h-8 rounded opacity-80">
         </div>
     </section>
 
-    <!-- Features -->
-    <section class="max-w-4xl mx-auto px-4 pb-20">
-        <div class="grid md:grid-cols-3 gap-8">
-            <div class="bg-white p-6 rounded-xl shadow-sm border">
-                <div class="text-3xl mb-3">💰</div>
-                <h3 class="font-bold text-lg mb-2">Ridiculously Cheap</h3>
-                <p class="text-gray-600">₹99/mo for 1TB. No egress fees. No hidden charges. No surprises on your bill.</p>
+    <!-- Value Props — no cards, just clean text -->
+    <section class="border-t border-b bg-white py-16">
+        <div class="max-w-4xl mx-auto px-4 grid md:grid-cols-3 gap-12 text-center">
+            <div>
+                <p class="text-3xl font-bold text-green-600 mb-2">₹99/mo</p>
+                <p class="text-gray-600 text-sm">1 TB included. No egress fees. No hidden charges. No bill shock.</p>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border">
-                <div class="text-3xl mb-3">🔌</div>
-                <h3 class="font-bold text-lg mb-2">S3 Compatible</h3>
-                <p class="text-gray-600">Standard S3 API. Use aws-cli, boto3, any S3 SDK. Drop-in replacement for AWS S3.</p>
+            <div>
+                <p class="text-3xl font-bold text-gray-900 mb-2">S3 API</p>
+                <p class="text-gray-600 text-sm">Drop-in AWS S3 replacement. Use boto3, aws-cli, or any S3 SDK.</p>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border">
-                <div class="text-3xl mb-3">🚀</div>
-                <h3 class="font-bold text-lg mb-2">Unlimited Bandwidth</h3>
-                <p class="text-gray-600">Upload and download as much as you want. Zero transfer fees. Ever.</p>
+            <div>
+                <p class="text-3xl font-bold text-gray-900 mb-2">∞ Transfer</p>
+                <p class="text-gray-600 text-sm">Upload and download without limits. Zero bandwidth fees, ever.</p>
             </div>
         </div>
     </section>
 
     <!-- Pricing -->
-    <section class="bg-white py-20 border-t">
-        <div class="max-w-md mx-auto px-4 text-center">
-            <h2 class="text-3xl font-bold mb-8">Simple Pricing</h2>
-            <div class="bg-green-50 border-2 border-green-600 rounded-2xl p-8">
-                <div class="text-5xl font-bold text-green-600 mb-2">₹99<span class="text-lg text-gray-500">/month</span></div>
-                <p class="text-gray-700 mb-6">1 TB Storage</p>
-                <ul class="text-left text-gray-700 space-y-3 mb-8">
-                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> Unlimited bandwidth</li>
-                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> Unlimited buckets</li>
-                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> Unlimited API keys</li>
-                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> S3-compatible API</li>
-                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> Files up to 5GB each</li>
-                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> 7-day free trial</li>
+    <section class="py-20">
+        <div class="max-w-sm mx-auto px-4 text-center">
+            <h2 class="text-2xl font-bold mb-8">Simple Pricing</h2>
+            <div class="bg-white border-2 border-green-600 rounded-lg p-8">
+                <div class="text-4xl font-bold text-green-600 mb-1">₹99<span class="text-base text-gray-500 font-normal">/month</span></div>
+                <p class="text-gray-500 mb-6 text-sm">1 TB Storage</p>
+                <ul class="text-left text-gray-700 space-y-2.5 mb-8 text-sm">
+                    <li class="flex items-center"><span class="text-green-600 mr-2 text-xs">✓</span> Unlimited bandwidth</li>
+                    <li class="flex items-center"><span class="text-green-600 mr-2 text-xs">✓</span> Unlimited buckets</li>
+                    <li class="flex items-center"><span class="text-green-600 mr-2 text-xs">✓</span> Unlimited API keys</li>
+                    <li class="flex items-center"><span class="text-green-600 mr-2 text-xs">✓</span> S3-compatible API</li>
+                    <li class="flex items-center"><span class="text-green-600 mr-2 text-xs">✓</span> Files up to 5GB each</li>
+                    <li class="flex items-center"><span class="text-green-600 mr-2 text-xs">✓</span> 7-day free trial</li>
                 </ul>
-                <a href="/login" class="block bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-medium">Get Started Free</a>
-                <p class="text-sm text-gray-500 mt-4">Prepaid wallet. Recharge starts at ₹99/month.</p>
+                <a href="/login" class="block bg-green-600 text-white py-3 rounded-md hover:bg-green-700 font-medium transition-colors">Get Started Free</a>
+                <p class="text-xs text-gray-400 mt-4">Prepaid wallet. Recharge starts at ₹99/month.</p>
             </div>
-            <p class="mt-6 text-gray-500">Need more than 1TB? <a href="/contact" class="text-green-600 underline">Contact us</a> for custom pricing.</p>
+            <p class="mt-6 text-sm text-gray-500">Need more than 1TB? <a href="/contact" class="text-green-600 underline">Contact us</a>.</p>
         </div>
     </section>
 
     <!-- Comparison Table -->
-    <section class="max-w-6xl mx-auto px-4 py-20">
-        <h2 class="text-3xl font-bold text-center mb-4">How We Compare</h2>
-        <p class="text-center text-gray-500 mb-10">Right expectations. No surprises.</p>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm border-collapse">
-                <thead>
-                    <tr>
-                        <th class="text-left px-4 py-4 bg-gray-50 border font-medium text-gray-600 w-1/6"></th>
-                        <th class="text-left px-4 py-4 bg-gray-50 border font-medium text-gray-700 w-5/12">AWS S3 <span class="text-xs text-gray-400 font-normal">(Enterprise Standard)</span></th>
-                        <th class="text-left px-4 py-4 bg-green-50 border font-medium text-green-700 w-5/12">BucketCheap <span class="text-xs text-green-500 font-normal">(Developer Focused)</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="px-4 py-4 border font-medium text-gray-700 align-top">Pricing &amp; Predictability</td>
-                        <td class="px-4 py-4 border text-gray-600 align-top">Complex tiering. Base storage fee + tiered egress charges + request API operation fees ($0.005 per 1,000 PUT/LIST). High risk of unexpected “bill shock.”</td>
-                        <td class="px-4 py-4 border text-gray-700 bg-green-50 align-top">Flat ₹99/month for 1 TB. Zero egress fees, zero request or API operation charges. Completely predictable prepaid wallet model with zero surprises.</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-4 border font-medium text-gray-700 align-top">Data Security &amp; Compliance</td>
-                        <td class="px-4 py-4 border text-gray-600 align-top">Strict IAM policies, Object Lock, KMS Customer Managed Keys, SOC 1/2/3, ISO 27001, HIPAA, and FedRAMP compliance.</td>
-                        <td class="px-4 py-4 border text-gray-700 bg-green-50 align-top">🛡️ <strong>“TRUST ME BRO” CERTIFIED</strong><br><br>Standard HTTPS encryption in transit and basic secret/access key authentication. No complex IAM trees, enterprise compliance audits, or corporate red tape.</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-4 border font-medium text-gray-700 align-top">Data Redundancy &amp; Backups</td>
-                        <td class="px-4 py-4 border text-gray-600 align-top">99.999999999% (11 9s) durability. Automatic replication across a minimum of 3 physically separated Availability Zones (AZs).</td>
-                        <td class="px-4 py-4 border text-gray-700 bg-green-50 align-top">Standard hardware RAID / local replication within a single tier-3 Indian datacenter environment. No multi-region cross-replication. Users are encouraged to maintain independent secondary backups.</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-4 border font-medium text-gray-700 align-top">Performance &amp; Latency</td>
-                        <td class="px-4 py-4 border text-gray-600 align-top">Global edge network (CloudFront integration). Sub-20ms first-byte latency globally. Optimized for high-concurrency enterprise applications.</td>
-                        <td class="px-4 py-4 border text-gray-700 bg-green-50 align-top">Up to 100 Mbps throughput. May fluctuate depending on load. Your requests get through 99% of the time without issues. May struggle with super large files (10GB+). Optimized for Indian developers with local datacenter topology.</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-4 border font-medium text-gray-700 align-top">API &amp; Tool Compatibility</td>
-                        <td class="px-4 py-4 border text-gray-600 align-top">Industry standard. Historically supports both Virtual-host and Path-style addressing, but actively moving towards virtual-host defaults.</td>
-                        <td class="px-4 py-4 border text-gray-700 bg-green-50 align-top">100% S3-Compatible API. Requires Path-style addressing configuration (supported natively by AWS CLI, boto3, MinIO, rclone, and Cyberduck).</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-4 border font-medium text-gray-700 align-top">SLA &amp; Support Guarantee</td>
-                        <td class="px-4 py-4 border text-gray-600 align-top">99.9% uptime SLA backed by contractual financial credits. 24/7 dedicated enterprise support engineers available via phone and ticketing.</td>
-                        <td class="px-4 py-4 border text-gray-700 bg-green-50 align-top">Best-effort uptime optimized for development environments, staging builds, media assets, and secondary backups. Email-only developer support within 24 hours.</td>
-                    </tr>
-                </tbody>
-            </table>
+    <section class="bg-white border-t py-20">
+        <div class="max-w-5xl mx-auto px-4">
+            <h2 class="text-2xl font-bold text-center mb-2">How We Compare</h2>
+            <p class="text-center text-gray-500 text-sm mb-10">Right expectations. No surprises.</p>
+            <div class="overflow-x-auto rounded-lg border">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="text-left px-5 py-3 font-medium text-gray-500 w-1/6 border-b"></th>
+                            <th class="text-left px-5 py-3 font-medium text-gray-700 w-5/12 border-b border-l">AWS S3 <span class="text-xs text-gray-400 font-normal">(Enterprise)</span></th>
+                            <th class="text-left px-5 py-3 font-medium text-green-700 w-5/12 border-b border-l bg-green-50/50">BucketCheap <span class="text-xs text-green-500 font-normal">(Developer)</span></th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-600">
+                        <tr class="border-b">
+                            <td class="px-5 py-4 font-medium text-gray-700 align-top text-xs uppercase tracking-wide">Pricing</td>
+                            <td class="px-5 py-4 border-l align-top">Complex tiering. Storage + egress + API ops ($0.005/1K requests). Bill shock risk.</td>
+                            <td class="px-5 py-4 border-l align-top bg-green-50/30">Flat ₹99/month for 1 TB. Zero egress, zero request fees. Prepaid wallet, zero surprises.</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="px-5 py-4 font-medium text-gray-700 align-top text-xs uppercase tracking-wide">Security</td>
+                            <td class="px-5 py-4 border-l align-top">IAM, Object Lock, KMS, SOC 1/2/3, ISO 27001, HIPAA, FedRAMP.</td>
+                            <td class="px-5 py-4 border-l align-top bg-green-50/30">🛡️ <strong>"TRUST ME BRO" CERTIFIED</strong><br>HTTPS + access key auth. No IAM trees or compliance paperwork.</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="px-5 py-4 font-medium text-gray-700 align-top text-xs uppercase tracking-wide">Durability</td>
+                            <td class="px-5 py-4 border-l align-top">11 9s durability. 3+ Availability Zones replication.</td>
+                            <td class="px-5 py-4 border-l align-top bg-green-50/30">RAID in a single Indian datacenter. No multi-region. Keep your own backups.</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="px-5 py-4 font-medium text-gray-700 align-top text-xs uppercase tracking-wide">Performance</td>
+                            <td class="px-5 py-4 border-l align-top">Global CDN, sub-20ms latency, high-concurrency optimized.</td>
+                            <td class="px-5 py-4 border-l align-top bg-green-50/30">Up to 100 Mbps. 99% requests succeed. May struggle with 10GB+ files. Fast within India.</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="px-5 py-4 font-medium text-gray-700 align-top text-xs uppercase tracking-wide">API</td>
+                            <td class="px-5 py-4 border-l align-top">Full S3 API, virtual-host + path-style.</td>
+                            <td class="px-5 py-4 border-l align-top bg-green-50/30">100% S3-compatible. Path-style required. Works with AWS CLI, boto3, rclone, Cyberduck.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-5 py-4 font-medium text-gray-700 align-top text-xs uppercase tracking-wide">Support</td>
+                            <td class="px-5 py-4 border-l align-top">99.9% SLA with credits. 24/7 phone + ticket support.</td>
+                            <td class="px-5 py-4 border-l align-top bg-green-50/30">Best-effort uptime. Email support within 24h. Built for dev, staging, and media assets.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </section>
 
     <!-- Quick Start -->
-    <section class="max-w-4xl mx-auto px-4 py-20">
-        <h2 class="text-3xl font-bold text-center mb-8">Get Started in 2 Minutes</h2>
-        <div class="bg-gray-900 text-green-400 rounded-xl p-6 font-mono text-sm overflow-x-auto">
-            <p class="text-gray-500"># 1. Add this to ~/.aws/config</p>
-            <p>[profile bucketcheap]</p>
-            <p>s3 =</p>
-            <p>&nbsp;&nbsp;addressing_style = path</p>
-            <p class="text-gray-500 mt-3"># 2. Set your credentials</p>
-            <p>$ aws configure --profile bucketcheap</p>
-            <p class="text-gray-500 mt-3"># 3. Create a bucket</p>
-            <p>$ aws s3 mb s3://my-bucket --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
-            <p class="text-gray-500 mt-3"># 4. Upload a file</p>
-            <p>$ aws s3 cp video.mp4 s3://my-bucket/ --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
-            <p class="text-gray-500 mt-3"># 5. List your buckets</p>
-            <p>$ aws s3 ls --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
+    <section class="py-20">
+        <div class="max-w-3xl mx-auto px-4">
+            <h2 class="text-2xl font-bold text-center mb-8">Get Started in 2 Minutes</h2>
+            <div class="bg-gray-900 rounded-lg p-6 font-mono text-sm overflow-x-auto leading-relaxed">
+                <p class="text-gray-500"># 1. Add to ~/.aws/config</p>
+                <p class="text-green-400">[profile bucketcheap]</p>
+                <p class="text-green-400">s3 =</p>
+                <p class="text-green-400">&nbsp;&nbsp;addressing_style = path</p>
+                <p class="text-gray-500 mt-4"># 2. Set credentials</p>
+                <p class="text-green-400">$ aws configure --profile bucketcheap</p>
+                <p class="text-gray-500 mt-4"># 3. Create a bucket</p>
+                <p class="text-green-400">$ aws s3 mb s3://my-bucket --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
+                <p class="text-gray-500 mt-4"># 4. Upload</p>
+                <p class="text-green-400">$ aws s3 cp video.mp4 s3://my-bucket/ --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
+                <p class="text-gray-500 mt-4"># 5. List</p>
+                <p class="text-green-400">$ aws s3 ls --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
+            </div>
+            <p class="text-center text-gray-400 mt-4 text-xs">Path-style addressing required (same as MinIO, R2, Backblaze). All S3 SDKs support it natively.</p>
         </div>
-        <p class="text-center text-gray-500 mt-4 text-sm">Path-style addressing required (same as MinIO, R2, Backblaze). All S3 SDKs support it natively.</p>
     </section>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-400 py-8">
-        <div class="max-w-4xl mx-auto px-4 text-center">
-            <p>BucketCheap — Fair-priced S3 storage for Indian developers</p>
-            <p class="mt-2 text-sm">
-                <a href="/contact" class="hover:text-white">Contact</a> ·
-                <a href="/terms" class="hover:text-white">Terms & Conditions</a> ·
-                <a href="/refunds" class="hover:text-white">Refunds & Cancellations</a> ·
-                <a href="/login" class="hover:text-white">Login</a>
+    <footer class="bg-gray-900 text-gray-400 py-10">
+        <div class="max-w-4xl mx-auto px-4 text-center text-sm">
+            <p class="text-gray-300 font-medium mb-2">BucketCheap</p>
+            <p class="mb-4">Fair-priced S3 storage for Indian developers</p>
+            <p class="space-x-3">
+                <a href="/contact" class="hover:text-white transition-colors">Contact</a>
+                <span class="text-gray-600">·</span>
+                <a href="/terms" class="hover:text-white transition-colors">Terms</a>
+                <span class="text-gray-600">·</span>
+                <a href="/refunds" class="hover:text-white transition-colors">Refunds</a>
+                <span class="text-gray-600">·</span>
+                <a href="/login" class="hover:text-white transition-colors">Login</a>
             </p>
         </div>
     </footer>
