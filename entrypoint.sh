@@ -42,19 +42,12 @@ sha1sum_command = none
 known_hosts_file = /root/.ssh/known_hosts
 EOF
 
-# Start Pingora proxy in background (handles Expect: 100-continue, streams without buffering)
-echo "Starting S3Gate Pingora proxy on port 9000..."
-RUST_LOG=info s3gate-proxy &
-PROXY_PID=$!
-sleep 1
+# Start nginx (streaming proxy — no buffering, preserves Content-Length)
+echo "Starting nginx streaming proxy on port 9000..."
+nginx
+echo "Nginx proxy started"
 
-if ! kill -0 $PROXY_PID 2>/dev/null; then
-  echo "FATAL: Pingora proxy failed to start"
-  exit 1
-fi
-echo "Pingora proxy started (PID $PROXY_PID)"
-
-# Start rclone on internal port 9001 (proxy forwards here)
+# Start rclone on internal port 9001
 echo "Starting rclone S3 gateway on port 9001..."
 exec rclone serve s3 storagebox:./ \
   --addr ":9001" \

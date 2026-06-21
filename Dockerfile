@@ -1,11 +1,8 @@
 FROM rclone/rclone:latest
 
-RUN apk add --no-cache openssh-client
+RUN apk add --no-cache openssh-client nginx
 
-# Copy pre-built Pingora proxy binary (cross-compiled for linux/amd64 musl)
-COPY proxy/s3gate-proxy /usr/local/bin/s3gate-proxy
-RUN chmod +x /usr/local/bin/s3gate-proxy
-
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
