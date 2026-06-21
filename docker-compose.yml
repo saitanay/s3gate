@@ -16,8 +16,8 @@ services:
       - SMTP_USER=no-reply@postcard.rest
       - SMTP_PASSWORD=jWUEQ8YaHSvifpg
       - SMTP_FROM=no-reply@postcard.rest
-      - DODOPAY_API_KEY=6O3YFr_uKSM9CzzE.XglP1WVljH4G6pbuDdllXi4tpSTHC9Ykhvv0Mng1Tx583_sA
-      - DODOPAY_PRODUCT_ID=pdt_0NhXAHe2ynJMh8xmoyPXR
+      - CASHFREE_APP_ID=${CASHFREE_APP_ID}
+      - CASHFREE_SECRET_KEY=${CASHFREE_SECRET_KEY}
       - BASE_URL=https://bucketcheap.com
       - ADMIN_EMAIL=bucketcheap@tanay.co.in
       - ADMIN_PASSWORD=BucketCheap2026

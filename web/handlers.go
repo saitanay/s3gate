@@ -70,7 +70,7 @@ func RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/dashboard/settings", AuthMiddleware(handleSettings))
 
 	// Webhooks
-	mux.HandleFunc("/webhooks/dodopay", HandleDodopayWebhook)
+	mux.HandleFunc("/webhooks/cashfree", HandleCashfreeWebhook)
 
 	// Admin
 	RegisterAdminRoutes(mux)
