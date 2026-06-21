@@ -20,7 +20,7 @@ func main() {
 		Director: func(req *http.Request) {
 			req.URL.Scheme = backend.Scheme
 			req.URL.Host = backend.Host
-			req.Host = backend.Host
+			// req.Host left unchanged — preserves original Host for S3 signature verification
 
 			// Strip Expect: 100-continue — rclone doesn't handle it
 			req.Header.Del("Expect")
