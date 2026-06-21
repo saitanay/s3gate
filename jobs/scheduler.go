@@ -54,13 +54,17 @@ func monthlyBilling() {
 		log.Printf("ERROR monthly billing query: %v", err)
 		return
 	}
-	defer rows.Close()
+
+	var userIDs []string
+	for rows.Next() {
+		var id string
+		rows.Scan(&id)
+		userIDs = append(userIDs, id)
+	}
+	rows.Close()
 
 	var billed, suspended int
-	for rows.Next() {
-		var userID string
-		rows.Scan(&userID)
-
+	for _, userID := range userIDs {
 		// Check if already billed this month
 		month := time.Now().Format("2006-01")
 		var count int
@@ -107,18 +111,21 @@ func calculateUsage() {
 		log.Printf("ERROR usage query: %v", err)
 		return
 	}
-	defer rows.Close()
 
+	var userIDs []string
 	for rows.Next() {
-		var userID string
-		rows.Scan(&userID)
+		var id string
+		rows.Scan(&id)
+		userIDs = append(userIDs, id)
+	}
+	rows.Close()
 
+	for _, userID := range userIDs {
 		// Use rclone to calculate size of user's prefix
-		// All buckets for a user are prefixed with userID--
 		cmd := exec.Command("rclone", "size", "storagebox:./", "--include", userID+"--**", "--json")
 		output, err := cmd.Output()
 		if err != nil {
-			continue // Skip silently for users with no data
+			continue
 		}
 
 		// Parse JSON output: {"count":N,"bytes":N}
