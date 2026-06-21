@@ -1,0 +1,81 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="min-h-screen">
+    <!-- Dashboard Nav -->
+    <nav class="bg-white border-b">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/dashboard" class="text-xl font-bold text-green-600">BucketCheap</a>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-500">{{.User.Email}}</span>
+                <a href="/logout" class="text-sm text-gray-600 hover:text-red-600">Logout</a>
+            </div>
+        </div>
+        <div class="max-w-6xl mx-auto px-4 py-2 flex space-x-6 text-sm">
+            <a href="/dashboard" class="text-green-600 font-medium">Overview</a>
+            <a href="/dashboard/buckets" class="text-gray-600 hover:text-gray-900">Buckets</a>
+            <a href="/dashboard/keys" class="text-gray-600 hover:text-gray-900">API Keys</a>
+            <a href="/dashboard/billing" class="text-gray-600 hover:text-gray-900">Billing</a>
+            <a href="/dashboard/settings" class="text-gray-600 hover:text-gray-900">Settings</a>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        {{if eq .User.Status "trial"}}
+        <div class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-6">
+            🎉 You're on a free trial (expires {{.User.TrialExpiresAt.Format "Jan 2, 2006"}}). <a href="/dashboard/billing" class="underline font-medium">Recharge</a> to continue after trial.
+        </div>
+        {{end}}
+
+        {{if eq .User.Status "suspended"}}
+        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
+            ⚠️ Account suspended — insufficient balance. <a href="/dashboard/billing" class="underline font-medium">Recharge now</a> to restore access.
+        </div>
+        {{end}}
+
+        <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+
+        <div class="grid md:grid-cols-3 gap-6">
+            <!-- Storage -->
+            <div class="bg-white p-6 rounded-xl border">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Storage Used</h3>
+                <p class="text-2xl font-bold">{{formatBytes .BytesUsed}}</p>
+                <div class="mt-3 bg-gray-200 rounded-full h-2">
+                    <div class="bg-green-600 rounded-full h-2" style="width: {{printf "%.1f" .UsedPct}}%"></div>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">of 1 TB</p>
+            </div>
+
+            <!-- Balance -->
+            <div class="bg-white p-6 rounded-xl border">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Wallet Balance</h3>
+                <p class="text-2xl font-bold">{{formatPaise .Balance}}</p>
+                <p class="text-sm text-gray-500 mt-2">≈ {{printf "%.0f" (divf .Balance 9900)}} months remaining</p>
+                <a href="/dashboard/billing" class="text-green-600 text-sm font-medium mt-3 inline-block">Recharge →</a>
+            </div>
+
+            <!-- Status -->
+            <div class="bg-white p-6 rounded-xl border">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Account Status</h3>
+                {{if eq .User.Status "active"}}
+                <p class="text-2xl font-bold text-green-600">Active</p>
+                {{else if eq .User.Status "trial"}}
+                <p class="text-2xl font-bold text-blue-600">Free Trial</p>
+                {{else}}
+                <p class="text-2xl font-bold text-red-600">Suspended</p>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Quick Start -->
+        <div class="mt-8 bg-white p-6 rounded-xl border">
+            <h3 class="font-bold mb-4">Quick Start</h3>
+            <p class="text-sm text-gray-600 mb-3">Use these settings with any S3 client:</p>
+            <div class="bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                <p>Endpoint: https://s3.bucketcheap.com</p>
+                <p>Region: us-east-1 (any value works)</p>
+                <p>Access Key: <a href="/dashboard/keys" class="underline">Generate in API Keys</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,40 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="min-h-screen">
+    <nav class="bg-gray-900 text-white">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <span class="font-bold">BucketCheap Admin</span>
+            <div class="space-x-4 text-sm">
+                <a href="/admin" class="hover:text-gray-300">Dashboard</a>
+                <a href="/admin/users" class="hover:text-gray-300">Users</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-6">Admin Dashboard</h1>
+        <div class="grid md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-4 rounded-xl border">
+                <p class="text-sm text-gray-500">Total Users</p>
+                <p class="text-2xl font-bold">{{.TotalUsers}}</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border">
+                <p class="text-sm text-gray-500">Active</p>
+                <p class="text-2xl font-bold text-green-600">{{.ActiveUsers}}</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border">
+                <p class="text-sm text-gray-500">Trial</p>
+                <p class="text-2xl font-bold text-blue-600">{{.TrialUsers}}</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border">
+                <p class="text-sm text-gray-500">Suspended</p>
+                <p class="text-2xl font-bold text-red-600">{{.SuspendedUsers}}</p>
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border">
+            <p class="text-sm text-gray-500">Total Revenue (Recharges)</p>
+            <p class="text-2xl font-bold">{{formatPaise .TotalRevenue}}</p>
+        </div>
+    </div>
+</div>
+{{end}}

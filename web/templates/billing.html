@@ -1,0 +1,77 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="min-h-screen">
+    <nav class="bg-white border-b">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/dashboard" class="text-xl font-bold text-green-600">BucketCheap</a>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-500">{{.User.Email}}</span>
+                <a href="/logout" class="text-sm text-gray-600 hover:text-red-600">Logout</a>
+            </div>
+        </div>
+        <div class="max-w-6xl mx-auto px-4 py-2 flex space-x-6 text-sm">
+            <a href="/dashboard" class="text-gray-600 hover:text-gray-900">Overview</a>
+            <a href="/dashboard/buckets" class="text-gray-600 hover:text-gray-900">Buckets</a>
+            <a href="/dashboard/keys" class="text-gray-600 hover:text-gray-900">API Keys</a>
+            <a href="/dashboard/billing" class="text-green-600 font-medium">Billing</a>
+            <a href="/dashboard/settings" class="text-gray-600 hover:text-gray-900">Settings</a>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-6">Billing</h1>
+
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <!-- Balance -->
+            <div class="bg-white p-6 rounded-xl border">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Wallet Balance</h3>
+                <p class="text-3xl font-bold">{{formatPaise .Balance}}</p>
+                <p class="text-sm text-gray-500 mt-1">Monthly charge: ₹99</p>
+            </div>
+
+            <!-- Recharge -->
+            <div class="bg-white p-6 rounded-xl border">
+                <h3 class="text-sm font-medium text-gray-500 mb-3">Recharge Wallet</h3>
+                <form method="POST" action="/dashboard/billing/recharge">
+                    <div class="flex space-x-2">
+                        <select name="amount" class="flex-1 px-3 py-2 border rounded-lg text-sm">
+                            <option value="99900">₹999 (≈10 months)</option>
+                            <option value="199900">₹1,999 (≈20 months)</option>
+                            <option value="499900">₹4,999 (≈50 months)</option>
+                        </select>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">Pay</button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Minimum recharge ₹999. Powered by DodoPay.</p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="bg-white rounded-xl border overflow-hidden">
+            <h3 class="px-4 py-3 font-medium border-b bg-gray-50">Transaction History</h3>
+            <table class="w-full text-sm">
+                <thead class="border-b">
+                    <tr>
+                        <th class="text-left px-4 py-3 font-medium text-gray-600">Date</th>
+                        <th class="text-left px-4 py-3 font-medium text-gray-600">Description</th>
+                        <th class="text-right px-4 py-3 font-medium text-gray-600">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Transactions}}
+                    <tr class="border-b">
+                        <td class="px-4 py-3 text-gray-500">{{.CreatedAt.Format "Jan 2, 2006"}}</td>
+                        <td class="px-4 py-3">{{.Description}}</td>
+                        <td class="px-4 py-3 text-right {{if eq .Type "recharge"}}text-green-600{{else}}text-red-600{{end}}">
+                            {{if eq .Type "recharge"}}+{{end}}{{formatPaise .AmountPaise}}
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500">No transactions yet.</td></tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}

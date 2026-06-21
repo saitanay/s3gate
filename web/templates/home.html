@@ -1,0 +1,87 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="min-h-screen">
+    <!-- Nav -->
+    <nav class="bg-white border-b">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-green-600">BucketCheap</a>
+            <div class="space-x-4">
+                <a href="/login" class="text-gray-600 hover:text-gray-900">Login</a>
+                <a href="/login" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Start Free Trial</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="max-w-4xl mx-auto px-4 py-20 text-center">
+        <h1 class="text-5xl font-bold text-gray-900 mb-6">S3 Storage at <span class="text-green-600">₹99/month</span></h1>
+        <p class="text-xl text-gray-600 mb-8">1 TB storage. Unlimited bandwidth. S3-compatible API.<br>Works with AWS CLI, any S3 SDK, rclone, Cyberduck.</p>
+        <a href="/login" class="inline-block bg-green-600 text-white text-lg px-8 py-4 rounded-lg hover:bg-green-700 shadow-lg">Start Free Trial — 7 days free</a>
+        <p class="text-gray-500 mt-4">No card required. Cancel anytime.</p>
+    </section>
+
+    <!-- Features -->
+    <section class="max-w-4xl mx-auto px-4 pb-20">
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border">
+                <div class="text-3xl mb-3">💰</div>
+                <h3 class="font-bold text-lg mb-2">Ridiculously Cheap</h3>
+                <p class="text-gray-600">₹99/mo for 1TB. No egress fees. No hidden charges. No surprises on your bill.</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border">
+                <div class="text-3xl mb-3">🔌</div>
+                <h3 class="font-bold text-lg mb-2">S3 Compatible</h3>
+                <p class="text-gray-600">Standard S3 API. Use aws-cli, boto3, any S3 SDK. Drop-in replacement for AWS S3.</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border">
+                <div class="text-3xl mb-3">🚀</div>
+                <h3 class="font-bold text-lg mb-2">Unlimited Bandwidth</h3>
+                <p class="text-gray-600">Upload and download as much as you want. Zero transfer fees. Ever.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="bg-white py-20 border-t">
+        <div class="max-w-md mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold mb-8">Simple Pricing</h2>
+            <div class="bg-green-50 border-2 border-green-600 rounded-2xl p-8">
+                <div class="text-5xl font-bold text-green-600 mb-2">₹99<span class="text-lg text-gray-500">/month</span></div>
+                <p class="text-gray-700 mb-6">1 TB Storage</p>
+                <ul class="text-left text-gray-700 space-y-3 mb-8">
+                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> Unlimited bandwidth</li>
+                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> Unlimited buckets</li>
+                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> Unlimited API keys</li>
+                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> S3-compatible API</li>
+                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> Files up to 5GB each</li>
+                    <li class="flex items-center"><span class="text-green-600 mr-2">✓</span> 7-day free trial</li>
+                </ul>
+                <a href="/login" class="block bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-medium">Get Started Free</a>
+                <p class="text-sm text-gray-500 mt-4">Prepaid wallet. Min recharge ₹999 (≈10 months).</p>
+            </div>
+            <p class="mt-6 text-gray-500">Need more than 1TB? <a href="/contact" class="text-green-600 underline">Contact us</a> for custom pricing.</p>
+        </div>
+    </section>
+
+    <!-- Quick Start -->
+    <section class="max-w-4xl mx-auto px-4 py-20">
+        <h2 class="text-3xl font-bold text-center mb-8">Get Started in 2 Minutes</h2>
+        <div class="bg-gray-900 text-green-400 rounded-xl p-6 font-mono text-sm overflow-x-auto">
+            <p class="text-gray-500"># Configure your credentials</p>
+            <p>$ aws configure</p>
+            <p class="text-gray-500 mt-3"># Upload a file</p>
+            <p>$ aws s3 cp video.mp4 s3://my-bucket/ --endpoint-url https://s3.bucketcheap.com</p>
+            <p class="text-gray-500 mt-3"># List your buckets</p>
+            <p>$ aws s3 ls --endpoint-url https://s3.bucketcheap.com</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-400 py-8">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <p>BucketCheap — Cheap S3 storage for Indian developers</p>
+            <p class="mt-2 text-sm"><a href="/contact" class="hover:text-white">Contact</a> · <a href="/login" class="hover:text-white">Login</a></p>
+        </div>
+    </footer>
+</div>
+{{end}}

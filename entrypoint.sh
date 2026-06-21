@@ -5,10 +5,7 @@ HOST="${STORAGEBOX_HOST}"
 USERNAME="${STORAGEBOX_USERNAME}"
 PASSWORD="${STORAGEBOX_PASSWORD}"
 
-ACCESS_KEY="${S3_ACCESS_KEY_ID:-minioadmin}"
-SECRET_KEY="${S3_SECRET_ACCESS_KEY:-minioadmin}"
-
-mkdir -p /root/.config/rclone /root/.ssh /tmp/vfs-cache
+mkdir -p /root/.config/rclone /root/.ssh /data/uploads /data/db
 
 # ssh-keyscan with retries (flaky on port 23)
 echo "Scanning SSH host keys for ${HOST}:23..."
@@ -42,21 +39,9 @@ sha1sum_command = none
 known_hosts_file = /root/.ssh/known_hosts
 EOF
 
-# Start Go proxy in background (streams without buffering, preserves Content-Length)
-echo "Starting S3Gate Go proxy on port 9000..."
-s3proxy &
-PROXY_PID=$!
-sleep 1
-
-if ! kill -0 $PROXY_PID 2>/dev/null; then
-  echo "FATAL: Go proxy failed to start"
-  exit 1
-fi
-echo "Go proxy started (PID $PROXY_PID)"
-
-# Start rclone on internal port 9001
+# Start rclone S3 backend on internal port 9001
 echo "Starting rclone S3 gateway on port 9001..."
-exec rclone serve s3 storagebox:./ \
+rclone serve s3 storagebox:./ \
   --addr ":9001" \
   --vfs-cache-mode off \
   --transfers 8 \
@@ -66,4 +51,16 @@ exec rclone serve s3 storagebox:./ \
   --retries 3 \
   --contimeout 30s \
   --no-checksum \
-  --log-level INFO
+  --log-level INFO &
+RCLONE_PID=$!
+sleep 2
+
+if ! kill -0 $RCLONE_PID 2>/dev/null; then
+  echo "FATAL: rclone failed to start"
+  exit 1
+fi
+echo "rclone started (PID $RCLONE_PID)"
+
+# Start BucketCheap (web UI + S3 proxy)
+echo "Starting BucketCheap..."
+exec bucketcheap

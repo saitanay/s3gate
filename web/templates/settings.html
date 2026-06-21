@@ -1,0 +1,30 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="min-h-screen">
+    <nav class="bg-white border-b">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/dashboard" class="text-xl font-bold text-green-600">BucketCheap</a>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-500">{{.User.Email}}</span>
+                <a href="/logout" class="text-sm text-gray-600 hover:text-red-600">Logout</a>
+            </div>
+        </div>
+        <div class="max-w-6xl mx-auto px-4 py-2 flex space-x-6 text-sm">
+            <a href="/dashboard" class="text-gray-600 hover:text-gray-900">Overview</a>
+            <a href="/dashboard/buckets" class="text-gray-600 hover:text-gray-900">Buckets</a>
+            <a href="/dashboard/keys" class="text-gray-600 hover:text-gray-900">API Keys</a>
+            <a href="/dashboard/billing" class="text-gray-600 hover:text-gray-900">Billing</a>
+            <a href="/dashboard/settings" class="text-green-600 font-medium">Settings</a>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-6">Settings</h1>
+        <div class="bg-white p-6 rounded-xl border">
+            <h3 class="font-medium mb-2">Account</h3>
+            <p class="text-gray-600">Email: {{.User.Email}}</p>
+            <p class="text-gray-600 mt-1">Member since: {{.User.CreatedAt.Format "Jan 2, 2006"}}</p>
+        </div>
+    </div>
+</div>
+{{end}}

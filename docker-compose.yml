@@ -1,19 +1,31 @@
 services:
-  s3gate:
+  bucketcheap:
     build: .
-    container_name: s3gate
+    container_name: bucketcheap
     ports:
       - "9000:9000"
     volumes:
       - upload-cache:/data/uploads
+      - sqlite-data:/data/db
     environment:
       - STORAGEBOX_HOST=u613760-sub1.your-storagebox.de
       - STORAGEBOX_USERNAME=u613760-sub1
       - STORAGEBOX_PASSWORD=Tanay#5566778899
-      - S3_ACCESS_KEY_ID=minioadmin
-      - S3_SECRET_ACCESS_KEY=minioadmin
-      - S3_LISTEN_PORT=9000
+      - SMTP_HOST=smtp.purelymail.com
+      - SMTP_PORT=587
+      - SMTP_USER=no-reply@postcard.rest
+      - SMTP_PASSWORD=jWUEQ8YaHSvifpg
+      - SMTP_FROM=no-reply@postcard.rest
+      - DODOPAY_API_KEY=6O3YFr_uKSM9CzzE.XglP1WVljH4G6pbuDdllXi4tpSTHC9Ykhvv0Mng1Tx583_sA
+      - DODOPAY_PRODUCT_ID=prod_PLACEHOLDER
+      - BASE_URL=https://bucketcheap.com
+      - ADMIN_EMAIL=tanay@saitanay.com
+      - ADMIN_PASSWORD=BucketCheap2026!
+      - PORT=9000
+      - DB_PATH=/data/db/bucketcheap.db
+      - TEMPLATE_DIR=/app/web/templates
     restart: unless-stopped
 
 volumes:
   upload-cache:
+  sqlite-data:

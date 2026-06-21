@@ -1,4 +1,4 @@
-package main
+package proxy
 
 import (
 	"crypto/md5"
@@ -73,13 +73,13 @@ type CompletePart struct {
 	ETag       string `xml:"ETag"`
 }
 
-func main() {
+func NewS3Handler() http.Handler {
 	os.MkdirAll(uploadDir, 0755)
 
 	backend, _ := url.Parse(backendAddr)
 
 	// Reverse proxy for non-multipart requests (GET, LIST, small PUT, DELETE)
-	proxy := &httputil.ReverseProxy{
+	reverseProxy := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = backend.Scheme
 			req.URL.Host = backend.Host
@@ -98,6 +98,27 @@ func main() {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
+
+		// Authenticate tenant
+		tenant, _ := AuthenticateS3Request(r)
+		if tenant == nil {
+			S3ErrorResponse(w, "AccessDenied", "Invalid access key or signature", http.StatusForbidden)
+			return
+		}
+
+		// Check write permission for mutating operations
+		if r.Method == "PUT" || r.Method == "POST" || r.Method == "DELETE" {
+			if r.Method != "DELETE" { // deletes always allowed (frees space)
+				allowed, reason := CheckWriteAllowed(tenant)
+				if !allowed {
+					S3ErrorResponse(w, reason, "Write not allowed: "+reason, http.StatusForbidden)
+					return
+				}
+			}
+		}
+
+		// Rewrite path for tenant isolation
+		RewritePathForTenant(r, tenant.UserID)
 
 		// Intercept multipart operations
 		if r.Method == "POST" && query.Has("uploads") {
@@ -131,22 +152,13 @@ func main() {
 			r.TransferEncoding = nil
 		}
 
-		proxy.ServeHTTP(w, r)
+		reverseProxy.ServeHTTP(w, r)
 	})
-
-	server := &http.Server{
-		Addr:           listenAddr,
-		Handler:        handler,
-		ReadTimeout:    0,
-		WriteTimeout:   0,
-		IdleTimeout:    120 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-	}
 
 	go cleanupStaleUploads()
 
-	log.Printf("S3 proxy listening on %s → %s (multipart assembly on %s)", listenAddr, backendAddr, uploadDir)
-	log.Fatal(server.ListenAndServe())
+	log.Printf("S3 proxy handler ready (multipart assembly on %s)", uploadDir)
+	return handler
 }
 
 func parseBucketKey(r *http.Request) (bucket, key string) {

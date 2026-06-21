@@ -1,0 +1,35 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-xl shadow-sm border max-w-md w-full mx-4">
+        <a href="/" class="text-2xl font-bold text-green-600 block text-center mb-6">BucketCheap</a>
+
+        {{if .Sent}}
+        <div class="text-center">
+            <div class="text-4xl mb-4">📧</div>
+            <h2 class="text-xl font-bold mb-2">Check your email</h2>
+            <p class="text-gray-600">We sent a sign-in link to <strong>{{.Email}}</strong></p>
+            <p class="text-gray-500 text-sm mt-4">Link expires in 15 minutes. Check spam if you don't see it.</p>
+        </div>
+        {{else}}
+        <h2 class="text-xl font-bold text-center mb-6">Sign in or create account</h2>
+
+        {{if .Error}}
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{{.Error}}</div>
+        {{end}}
+
+        <form method="POST" action="/login">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email address</label>
+            <input type="email" name="email" required autofocus
+                   class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                   placeholder="you@example.com">
+            <button type="submit"
+                    class="w-full mt-4 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-medium">
+                Send Magic Link
+            </button>
+        </form>
+        <p class="text-center text-gray-500 text-sm mt-4">No password needed. We'll email you a sign-in link.</p>
+        {{end}}
+    </div>
+</div>
+{{end}}
