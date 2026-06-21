@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -41,10 +42,14 @@ func main() {
 			}
 		}
 
-		// Preserve Content-Length explicitly (Go may drop it otherwise)
+		// Preserve Content-Length explicitly
 		if r.ContentLength >= 0 {
 			proxyReq.ContentLength = r.ContentLength
+			proxyReq.Header.Set("Content-Length", fmt.Sprintf("%d", r.ContentLength))
 		}
+
+		// Force identity transfer encoding (prevent chunked)
+		proxyReq.TransferEncoding = []string{"identity"}
 
 		// Strip Expect header — we handle 100-continue at this layer
 		// Backend (rclone) doesn't support it
