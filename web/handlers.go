@@ -35,7 +35,7 @@ func InitTemplates(dir string) {
 
 	pages := []string{
 		"home.html", "login.html", "contact.html",
-		"terms.html", "refunds.html",
+		"terms.html", "refunds.html", "404.html",
 		"dashboard.html", "buckets.html", "keys.html",
 		"billing.html", "settings.html", "checkout.html",
 		"admin_login.html", "admin_dashboard.html",
@@ -83,7 +83,8 @@ func RegisterRoutes(mux *http.ServeMux) {
 
 func handleHome(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		w.WriteHeader(http.StatusNotFound)
+		render(w, "404.html", nil)
 		return
 	}
 	render(w, "home.html", nil)
