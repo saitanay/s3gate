@@ -13,8 +13,10 @@ import (
 )
 
 var templates map[string]*template.Template
+var staticDir string
 
 func InitTemplates(dir string) {
+	staticDir = filepath.Join(filepath.Dir(dir), "static")
 	funcMap := template.FuncMap{
 		"formatBytes": formatBytes,
 		"formatPaise": formatPaise,
@@ -47,6 +49,7 @@ func InitTemplates(dir string) {
 
 func RegisterRoutes(mux *http.ServeMux) {
 	// Public
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
 	mux.HandleFunc("/", handleHome)
 	mux.HandleFunc("/login", handleLogin)
 	mux.HandleFunc("/auth/verify", handleVerify)

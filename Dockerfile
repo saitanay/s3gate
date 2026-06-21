@@ -11,6 +11,7 @@ FROM rclone/rclone:latest
 RUN apk add --no-cache openssh-client sqlite
 COPY --from=builder /build/bucketcheap /usr/local/bin/bucketcheap
 COPY --from=builder /build/web/templates /app/web/templates
+COPY --from=builder /build/web/static /app/web/static
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
