@@ -20,7 +20,7 @@ services:
       - DODOPAY_PRODUCT_ID=pdt_0NhWToS9cKKtfWWhk8x1J
       - BASE_URL=https://bucketcheap.com
       - ADMIN_EMAIL=bucketcheap@tanay.co.in
-      - ADMIN_PASSWORD=BucketCheap2026!
+      - ADMIN_PASSWORD=BucketCheap2026
       - PORT=9000
       - DB_PATH=/data/db/bucketcheap.db
       - TEMPLATE_DIR=/app/web/templates

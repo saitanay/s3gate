@@ -1,2 +1,4 @@
 .env
 proxy/target/
+eng.traineddata
+*.traineddata
