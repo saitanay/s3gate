@@ -4,11 +4,12 @@ FROM rust:1.82-alpine AS builder
 RUN apk add --no-cache musl-dev openssl-dev openssl-libs-static pkgconf cmake make perl
 
 WORKDIR /build
-COPY proxy/Cargo.toml proxy/Cargo.lock* ./
+COPY proxy/Cargo.toml proxy/Cargo.lock ./
 COPY proxy/src ./src
 
-# On Alpine, cargo builds against musl by default — produces static binary
+# Limit parallelism to avoid OOM on small build servers
 ENV OPENSSL_STATIC=1
+ENV CARGO_BUILD_JOBS=2
 RUN cargo build --release
 
 # Stage 2: Final image with rclone + proxy
