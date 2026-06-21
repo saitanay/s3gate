@@ -17,10 +17,13 @@ const dodopayBaseURL = "https://live.dodopayments.com"
 
 // DodoPay checkout session request
 type dodopayCheckoutRequest struct {
-	ProductCart []dodopayProduct  `json:"product_cart"`
-	Customer    dodopayCustomer   `json:"customer"`
-	ReturnURL   string            `json:"return_url"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
+	ProductCart           []dodopayProduct       `json:"product_cart"`
+	Customer              dodopayCustomer        `json:"customer"`
+	ReturnURL             string                 `json:"return_url"`
+	Metadata              map[string]string      `json:"metadata,omitempty"`
+	BillingCurrency       string                 `json:"billing_currency,omitempty"`
+	AllowedPaymentMethods []string               `json:"allowed_payment_method_types,omitempty"`
+	BillingAddress        *dodopayBillingAddress `json:"billing_address,omitempty"`
 }
 
 type dodopayProduct struct {
@@ -31,6 +34,10 @@ type dodopayProduct struct {
 type dodopayCustomer struct {
 	Email string `json:"email"`
 	Name  string `json:"name,omitempty"`
+}
+
+type dodopayBillingAddress struct {
+	Country string `json:"country"`
 }
 
 type dodopayCheckoutResponse struct {
@@ -68,6 +75,9 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 		Customer: dodopayCustomer{
 			Email: user.Email,
 		},
+		BillingCurrency: "INR",
+		AllowedPaymentMethods: []string{"upi_collect", "credit", "debit"},
+		BillingAddress: &dodopayBillingAddress{Country: "IN"},
 		ReturnURL: fmt.Sprintf("%s/dashboard/billing/callback?user_id=%s&amount=%d", baseURL, user.ID, amountPaise),
 		Metadata: map[string]string{
 			"user_id":      user.ID,
