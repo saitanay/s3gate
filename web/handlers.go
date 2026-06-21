@@ -12,10 +12,10 @@ import (
 	"s3gate/db"
 )
 
-var templates *template.Template
+var templates map[string]*template.Template
 
 func InitTemplates(dir string) {
-	templates = template.Must(template.New("").Funcs(template.FuncMap{
+	funcMap := template.FuncMap{
 		"formatBytes": formatBytes,
 		"formatPaise": formatPaise,
 		"timeAgo":     timeAgo,
@@ -25,7 +25,24 @@ func InitTemplates(dir string) {
 			}
 			return float64(a) / float64(b)
 		},
-	}).ParseGlob(filepath.Join(dir, "*.html")))
+	}
+
+	layoutFile := filepath.Join(dir, "layout.html")
+	templates = make(map[string]*template.Template)
+
+	pages := []string{
+		"home.html", "login.html", "contact.html",
+		"dashboard.html", "buckets.html", "keys.html",
+		"billing.html", "settings.html",
+		"admin_login.html", "admin_dashboard.html",
+		"admin_users.html", "admin_user_edit.html",
+	}
+
+	for _, page := range pages {
+		templates[page] = template.Must(
+			template.New("").Funcs(funcMap).ParseFiles(layoutFile, filepath.Join(dir, page)),
+		)
+	}
 }
 
 func RegisterRoutes(mux *http.ServeMux) {
@@ -265,7 +282,13 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 // --- Helpers ---
 
 func render(w http.ResponseWriter, name string, data any) {
-	err := templates.ExecuteTemplate(w, name, data)
+	tmpl, ok := templates[name]
+	if !ok {
+		log.Printf("ERROR template %s not found", name)
+		http.Error(w, "Internal error", 500)
+		return
+	}
+	err := tmpl.ExecuteTemplate(w, "layout", data)
 	if err != nil {
 		log.Printf("ERROR rendering %s: %v", name, err)
 		http.Error(w, "Internal error", 500)
