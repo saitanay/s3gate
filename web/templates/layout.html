@@ -3,14 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{if .Title}}{{.Title}} — {{end}}BucketCheap</title>
+    <title>{{if .Title}}{{.Title}} — {{end}}BucketCheap — 1 TB S3 Storage at ₹99/month</title>
+    <meta name="description" content="S3-compatible object storage for Indian developers. 1 TB storage, unlimited bandwidth, zero egress fees. ₹99/month. Works with AWS CLI, boto3, rclone, Cyberduck.">
+    <meta name="keywords" content="S3 storage India, cheap S3, object storage, cloud storage India, S3 compatible, AWS alternative India, bucket storage, developer storage, ₹99 storage">
+    <meta name="author" content="BucketCheap">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://bucketcheap.com{{if .CanonicalPath}}{{.CanonicalPath}}{{end}}">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    <meta property="og:title" content="BucketCheap — 1 TB Storage, ₹99/month">
-    <meta property="og:description" content="S3-compatible object storage with unlimited bandwidth. Fair-priced for Indian developers.">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="{{if .Title}}{{.Title}} — {{end}}BucketCheap — 1 TB Storage, ₹99/month">
+    <meta property="og:description" content="S3-compatible object storage with unlimited bandwidth. Fair-priced for Indian developers. No egress fees, no surprises.">
     <meta property="og:image" content="https://bucketcheap.com/static/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta property="og:url" content="https://bucketcheap.com">
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="BucketCheap">
+    <meta property="og:locale" content="en_IN">
+
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="BucketCheap — 1 TB Storage, ₹99/month">
+    <meta name="twitter:description" content="S3-compatible storage for Indian developers. Unlimited bandwidth. UPI payments. No bill shock.">
+    <meta name="twitter:image" content="https://bucketcheap.com/static/og-image.png">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "BucketCheap",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web",
+        "description": "S3-compatible object storage for Indian developers. 1 TB, unlimited bandwidth, ₹99/month.",
+        "url": "https://bucketcheap.com",
+        "offers": {
+            "@type": "Offer",
+            "price": "99",
+            "priceCurrency": "INR",
+            "priceValidUntil": "2027-12-31",
+            "availability": "https://schema.org/InStock"
+        },
+        "provider": {
+            "@type": "Organization",
+            "name": "BucketCheap",
+            "url": "https://bucketcheap.com",
+            "email": "bucketcheap@tanay.co.in"
+        }
+    }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
