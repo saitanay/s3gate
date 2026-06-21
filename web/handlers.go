@@ -37,7 +37,7 @@ func InitTemplates(dir string) {
 		"home.html", "login.html", "contact.html",
 		"terms.html", "refunds.html",
 		"dashboard.html", "buckets.html", "keys.html",
-		"billing.html", "settings.html", "checkout.html",
+		"billing.html", "settings.html",
 		"admin_login.html", "admin_dashboard.html",
 		"admin_users.html", "admin_user_edit.html",
 	}
