@@ -37,7 +37,7 @@ func InitTemplates(dir string) {
 		"home.html", "login.html", "contact.html",
 		"terms.html", "refunds.html",
 		"dashboard.html", "buckets.html", "keys.html",
-		"billing.html", "settings.html",
+		"billing.html", "settings.html", "checkout.html",
 		"admin_login.html", "admin_dashboard.html",
 		"admin_users.html", "admin_user_edit.html",
 	}
@@ -73,7 +73,7 @@ func RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/dashboard/settings", AuthMiddleware(handleSettings))
 
 	// Webhooks
-	mux.HandleFunc("/webhooks/dodopay", HandleDodopayWebhook)
+	mux.HandleFunc("/webhooks/cashfree", HandleCashfreeWebhook)
 
 	// Admin
 	RegisterAdminRoutes(mux)
