@@ -86,6 +86,7 @@ func NewS3Handler() http.Handler {
 			req.URL.Scheme = backend.Scheme
 			req.URL.Host = backend.Host
 			req.Header.Del("Expect")
+			req.Header.Del("Authorization") // Strip — rclone has no auth, and signed path changed after rewrite
 		},
 		Transport: &http.Transport{
 			MaxIdleConns:          100,
