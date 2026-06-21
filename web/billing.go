@@ -108,26 +108,8 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 
 // HandleBillingCallback handles return from DodoPay after payment
 func HandleBillingCallback(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("user_id")
-	amountStr := r.URL.Query().Get("amount")
-	paymentID := r.URL.Query().Get("payment_id")
-	status := r.URL.Query().Get("status")
-
-	if status == "succeeded" && userID != "" && amountStr != "" {
-		amountPaise, _ := strconv.ParseInt(amountStr, 10, 64)
-		if amountPaise > 0 {
-			err := db.CreditWallet(userID, amountPaise,
-				fmt.Sprintf("Recharge ₹%d.%02d", amountPaise/100, amountPaise%100),
-				paymentID)
-			if err != nil {
-				log.Printf("ERROR crediting wallet: %v", err)
-			} else {
-				log.Printf("Wallet credited: user=%s amount=₹%d.%02d payment=%s",
-					userID, amountPaise/100, amountPaise%100, paymentID)
-			}
-		}
-	}
-
+	// Don't credit here — webhook handles it (with dedup).
+	// Just redirect user back to billing page.
 	http.Redirect(w, r, "/dashboard/billing", http.StatusSeeOther)
 }
 
