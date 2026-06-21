@@ -7,7 +7,6 @@ PASSWORD="${STORAGEBOX_PASSWORD}"
 
 ACCESS_KEY="${S3_ACCESS_KEY_ID:-minioadmin}"
 SECRET_KEY="${S3_SECRET_ACCESS_KEY:-minioadmin}"
-PORT="${S3_LISTEN_PORT:-9000}"
 
 mkdir -p /root/.config/rclone /root/.ssh /tmp/vfs-cache
 
@@ -43,12 +42,20 @@ sha1sum_command = none
 known_hosts_file = /root/.ssh/known_hosts
 EOF
 
-echo "Starting S3 gateway on port ${PORT}..."
-# Start nginx (handles Expect: 100-continue for S3 clients)
-nginx
-echo "Nginx proxy started on port ${PORT}"
+# Start Pingora proxy in background (handles Expect: 100-continue, streams without buffering)
+echo "Starting S3Gate Pingora proxy on port 9000..."
+RUST_LOG=info s3gate-proxy &
+PROXY_PID=$!
+sleep 1
 
-# Rclone listens on internal port, nginx proxies from $PORT
+if ! kill -0 $PROXY_PID 2>/dev/null; then
+  echo "FATAL: Pingora proxy failed to start"
+  exit 1
+fi
+echo "Pingora proxy started (PID $PROXY_PID)"
+
+# Start rclone on internal port 9001 (proxy forwards here)
+echo "Starting rclone S3 gateway on port 9001..."
 exec rclone serve s3 storagebox:./ \
   --addr ":9001" \
   --auth-key "${ACCESS_KEY},${SECRET_KEY}" \
