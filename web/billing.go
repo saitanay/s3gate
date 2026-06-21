@@ -14,7 +14,7 @@ import (
 	"s3gate/db"
 )
 
-const dodopayBaseURL = "https://api.dodopayments.com/v1/checkout/sessions"
+const dodopayBaseURL = "https://live.dodopayments.com/checkouts"
 
 // HandleRecharge creates a DodoPay checkout session and redirects user
 func HandleRecharge(w http.ResponseWriter, r *http.Request) {
