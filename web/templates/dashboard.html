@@ -70,11 +70,22 @@
         <div class="mt-8 bg-white p-6 rounded-xl border">
             <h3 class="font-bold mb-4">Quick Start</h3>
             <p class="text-sm text-gray-600 mb-3">Use these settings with any S3 client:</p>
-            <div class="bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-sm overflow-x-auto">
-                <p>Endpoint: https://s3.bucketcheap.com</p>
-                <p>Region: us-east-1 (any value works)</p>
-                <p>Access Key: <a href="/dashboard/keys" class="underline">Generate in API Keys</a></p>
+            <div class="bg-gray-50 border rounded-lg p-4 text-sm space-y-2 mb-4">
+                <p><span class="text-gray-500">Endpoint:</span> <code class="font-mono bg-white px-2 py-0.5 rounded border">https://s3.bucketcheap.com</code></p>
+                <p><span class="text-gray-500">Region:</span> <code class="font-mono bg-white px-2 py-0.5 rounded border">us-east-1</code> (any value works)</p>
+                <p><span class="text-gray-500">Path Style:</span> <code class="font-mono bg-white px-2 py-0.5 rounded border">true</code> <span class="text-red-500 text-xs">(required)</span></p>
+                <p><span class="text-gray-500">Access Key:</span> <a href="/dashboard/keys" class="text-green-600 underline">Generate in API Keys →</a></p>
             </div>
+            <div class="bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-xs overflow-x-auto">
+                <p class="text-gray-500"># AWS CLI — add to ~/.aws/config:</p>
+                <p>[profile bucketcheap]</p>
+                <p>s3 =</p>
+                <p>&nbsp;&nbsp;addressing_style = path</p>
+                <p class="text-gray-500 mt-2"># Then use:</p>
+                <p>$ aws s3 ls --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
+                <p>$ aws s3 cp file.mp4 s3://my-bucket/ --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
+            </div>
+            <p class="text-xs text-gray-500 mt-3">⚠️ Path-style addressing is required (same as MinIO, R2, Backblaze). See <a href="/dashboard/keys" class="text-green-600 underline">API Keys</a> for Python, Node.js, and rclone examples.</p>
         </div>
     </div>
 </div>

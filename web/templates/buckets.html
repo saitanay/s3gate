@@ -23,12 +23,48 @@
         <div class="bg-white p-6 rounded-xl border">
             <p class="text-gray-600 mb-4">Manage buckets using the S3 API or AWS CLI:</p>
             <div class="bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-sm space-y-2">
-                <p class="text-gray-500"># Create a bucket</p>
-                <p>$ aws s3 mb s3://my-bucket --endpoint-url https://s3.bucketcheap.com</p>
+                <p class="text-gray-500"># First, add to ~/.aws/config:</p>
+                <p>[profile bucketcheap]</p>
+                <p>s3 =</p>
+                <p>&nbsp;&nbsp;addressing_style = path</p>
+                <p class="text-gray-500 mt-3"># Create a bucket</p>
+                <p>$ aws s3 mb s3://my-bucket --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
                 <p class="text-gray-500 mt-3"># List buckets</p>
-                <p>$ aws s3 ls --endpoint-url https://s3.bucketcheap.com</p>
+                <p>$ aws s3 ls --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
+                <p class="text-gray-500 mt-3"># Upload a file</p>
+                <p>$ aws s3 cp myfile.mp4 s3://my-bucket/ --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
                 <p class="text-gray-500 mt-3"># Delete a bucket</p>
-                <p>$ aws s3 rb s3://my-bucket --endpoint-url https://s3.bucketcheap.com</p>
+                <p>$ aws s3 rb s3://my-bucket --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</p>
+            </div>
+            <p class="text-xs text-gray-500 mt-3">⚠️ Path-style addressing required. Add <code class="bg-gray-100 px-1 rounded">addressing_style = path</code> to your AWS profile or use <code class="bg-gray-100 px-1 rounded">forcePathStyle: true</code> in SDKs.</p>
+        </div>
+
+        <!-- SDK Snippets -->
+        <div class="mt-6 grid md:grid-cols-2 gap-4">
+            <div class="bg-gray-900 rounded-lg p-4">
+                <p class="text-xs text-gray-400 mb-2">Python (boto3)</p>
+                <pre class="text-green-400 text-xs font-mono whitespace-pre-wrap">s3 = boto3.client('s3',
+    endpoint_url='https://s3.bucketcheap.com',
+    aws_access_key_id='YOUR_KEY',
+    aws_secret_access_key='YOUR_SECRET',
+    config=Config(s3={'addressing_style': 'path'})
+)
+
+s3.create_bucket(Bucket='my-bucket')
+s3.upload_file('video.mp4', 'my-bucket', 'video.mp4')</pre>
+            </div>
+            <div class="bg-gray-900 rounded-lg p-4">
+                <p class="text-xs text-gray-400 mb-2">Node.js (AWS SDK v3)</p>
+                <pre class="text-green-400 text-xs font-mono whitespace-pre-wrap">import { S3Client, CreateBucketCommand } from '@aws-sdk/client-s3';
+
+const s3 = new S3Client({
+  endpoint: 'https://s3.bucketcheap.com',
+  region: 'us-east-1',
+  forcePathStyle: true,
+  credentials: { accessKeyId: 'KEY', secretAccessKey: 'SECRET' },
+});
+
+await s3.send(new CreateBucketCommand({ Bucket: 'my-bucket' }));</pre>
             </div>
         </div>
     </div>

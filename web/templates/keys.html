@@ -77,6 +77,59 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Quick Start Snippets -->
+        <div class="mt-8">
+            <h2 class="text-lg font-bold mb-4">Quick Start</h2>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 mb-2">AWS CLI (~/.aws/config)</p>
+                    <pre class="text-green-400 text-xs font-mono whitespace-pre-wrap">[profile bucketcheap]
+s3 =
+  addressing_style = path
+
+# Then use:
+aws s3 ls --endpoint-url https://s3.bucketcheap.com --profile bucketcheap</pre>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 mb-2">Python (boto3)</p>
+                    <pre class="text-green-400 text-xs font-mono whitespace-pre-wrap">import boto3
+from botocore.config import Config
+
+s3 = boto3.client('s3',
+    endpoint_url='https://s3.bucketcheap.com',
+    aws_access_key_id='YOUR_ACCESS_KEY',
+    aws_secret_access_key='YOUR_SECRET_KEY',
+    config=Config(s3={'addressing_style': 'path'})
+)</pre>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 mb-2">Node.js (AWS SDK v3)</p>
+                    <pre class="text-green-400 text-xs font-mono whitespace-pre-wrap">import { S3Client } from '@aws-sdk/client-s3';
+
+const s3 = new S3Client({
+  endpoint: 'https://s3.bucketcheap.com',
+  region: 'us-east-1',
+  forcePathStyle: true,
+  credentials: {
+    accessKeyId: 'YOUR_ACCESS_KEY',
+    secretAccessKey: 'YOUR_SECRET_KEY',
+  },
+});</pre>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 mb-2">rclone (~/.config/rclone/rclone.conf)</p>
+                    <pre class="text-green-400 text-xs font-mono whitespace-pre-wrap">[bucketcheap]
+type = s3
+provider = Other
+endpoint = https://s3.bucketcheap.com
+access_key_id = YOUR_ACCESS_KEY
+secret_access_key = YOUR_SECRET_KEY
+force_path_style = true</pre>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-3">⚠️ Path-style addressing required (<code>forcePathStyle: true</code>). Same as MinIO, Cloudflare R2, Backblaze B2.</p>
+        </div>
     </div>
 </div>
 {{end}}
