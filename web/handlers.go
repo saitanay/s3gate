@@ -100,11 +100,12 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = SendMagicLink(email, token)
-	if err != nil {
-		render(w, "login.html", map[string]any{"Error": "Failed to send email. Please try again."})
-		return
-	}
+	go func() {
+		err := SendMagicLink(email, token)
+		if err != nil {
+			log.Printf("ERROR sending magic link to %s: %v", email, err)
+		}
+	}()
 
 	render(w, "login.html", map[string]any{"Sent": true, "Email": email})
 }
