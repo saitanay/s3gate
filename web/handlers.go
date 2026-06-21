@@ -82,6 +82,12 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
+	// Redirect to dashboard if already logged in
+	if user := GetCurrentUser(r); user != nil {
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
+	}
+
 	if r.Method == "GET" {
 		render(w, "login.html", nil)
 		return
@@ -154,7 +160,7 @@ func handleVerify(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   30 * 24 * 60 * 60, // 30 days
+		MaxAge:   10 * 365 * 24 * 60 * 60, // ~10 years (permanent until logout)
 	})
 
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
