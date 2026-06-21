@@ -58,11 +58,7 @@ echo "Go proxy started (PID $PROXY_PID)"
 echo "Starting rclone S3 gateway on port 9001..."
 exec rclone serve s3 storagebox:./ \
   --addr ":9001" \
-  --auth-key "${ACCESS_KEY},${SECRET_KEY}" \
-  --vfs-cache-mode writes \
-  --vfs-cache-max-size 10G \
-  --vfs-write-back 0s \
-  --cache-dir /tmp/vfs-cache \
+  --vfs-cache-mode off \
   --transfers 8 \
   --checkers 8 \
   --sftp-concurrency 8 \

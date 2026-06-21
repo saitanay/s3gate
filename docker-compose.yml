@@ -4,6 +4,8 @@ services:
     container_name: s3gate
     ports:
       - "9000:9000"
+    volumes:
+      - upload-cache:/data/uploads
     environment:
       - STORAGEBOX_HOST=u613760-sub1.your-storagebox.de
       - STORAGEBOX_USERNAME=u613760-sub1
@@ -12,3 +14,6 @@ services:
       - S3_SECRET_ACCESS_KEY=minioadmin
       - S3_LISTEN_PORT=9000
     restart: unless-stopped
+
+volumes:
+  upload-cache:
