@@ -17,9 +17,9 @@ services:
       - SMTP_PASSWORD=Bu887783tCh3ap@20271986
       - SMTP_FROM=BucketCheap@postcard.rest
       - SMTP_FROM_NAME=Vishwak @ BucketCheap
-      - CASHFREE_APP_ID=12663165ca5e2021833bd87e7a56136621
-      - CASHFREE_SECRET_KEY=cfsk_ma_prod_69c988de553893e8f6621ff946cb20ef_17928f09
-      - CASHFREE_WEBHOOK_SECRET=ow0yogt8xzpgoawa5krz
+      - DODOPAY_API_KEY=6O3YFr_uKSM9CzzE.XglP1WVljH4G6pbuDdllXi4tpSTHC9Ykhvv0Mng1Tx583_sA
+      - DODOPAY_PRODUCT_999=pdt_0NhXAHe2ynJMh8xmoyPXR
+      - DODOPAY_PRODUCT_99=pdt_0NhXV5fY9kh3e8ZAaQYEO
       - BASE_URL=https://bucketcheap.com
       - ADMIN_EMAIL=bucketcheap@tanay.co.in
       - ADMIN_PASSWORD=BucketCheap2026

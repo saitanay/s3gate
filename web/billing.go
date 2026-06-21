@@ -14,39 +14,9 @@ import (
 	"s3gate/db"
 )
 
-const cashfreeBaseURL = "https://api.cashfree.com/pg"
+const dodopayBaseURL = "https://api.dodopayments.com/v1/checkout/sessions"
 
-// Cashfree create order request
-type cashfreeOrderRequest struct {
-	OrderID         string                 `json:"order_id"`
-	OrderAmount     float64                `json:"order_amount"`
-	OrderCurrency   string                 `json:"order_currency"`
-	CustomerDetails cashfreeCustomer       `json:"customer_details"`
-	OrderMeta       cashfreeOrderMeta      `json:"order_meta"`
-	OrderNote       string                 `json:"order_note,omitempty"`
-	OrderTags       map[string]string      `json:"order_tags,omitempty"`
-}
-
-type cashfreeCustomer struct {
-	CustomerID    string `json:"customer_id"`
-	CustomerEmail string `json:"customer_email,omitempty"`
-	CustomerPhone string `json:"customer_phone"`
-}
-
-type cashfreeOrderMeta struct {
-	ReturnURL      string `json:"return_url"`
-	NotifyURL      string `json:"notify_url,omitempty"`
-	PaymentMethods string `json:"payment_methods,omitempty"`
-}
-
-type cashfreeOrderResponse struct {
-	CfOrderID        string `json:"cf_order_id"`
-	OrderID          string `json:"order_id"`
-	PaymentSessionID string `json:"payment_session_id"`
-	OrderStatus      string `json:"order_status"`
-}
-
-// HandleRecharge creates a Cashfree order and redirects user to payment page
+// HandleRecharge creates a DodoPay checkout session and redirects user
 func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Redirect(w, r, "/dashboard/billing", http.StatusSeeOther)
@@ -72,76 +42,82 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	baseURL := os.Getenv("BASE_URL")
-	appID := os.Getenv("CASHFREE_APP_ID")
-	secretKey := os.Getenv("CASHFREE_SECRET_KEY")
+	apiKey := os.Getenv("DODOPAY_API_KEY")
 
-	orderID := fmt.Sprintf("bc_%s_%d", user.ID[:8], time.Now().UnixMilli())
-	amountRupees := float64(amountPaise) / 100.0
+	// Pick product ID based on amount
+	productID := os.Getenv("DODOPAY_PRODUCT_99")
+	if amountPaise == 99900 {
+		productID = os.Getenv("DODOPAY_PRODUCT_999")
+	}
 
-	reqBody := cashfreeOrderRequest{
-		OrderID:       orderID,
-		OrderAmount:   amountRupees,
-		OrderCurrency: "INR",
-		CustomerDetails: cashfreeCustomer{
-			CustomerID:    user.ID,
-			CustomerEmail: user.Email,
-			CustomerPhone: "9999999999", // placeholder, Cashfree requires 10 digits
+	reqBody := map[string]any{
+		"customer": map[string]any{
+			"email": user.Email,
 		},
-		OrderMeta: cashfreeOrderMeta{
-			ReturnURL:      fmt.Sprintf("%s/dashboard/billing/callback?order_id={order_id}", baseURL),
-			NotifyURL:      fmt.Sprintf("%s/webhooks/cashfree", baseURL),
-			PaymentMethods: "cc,dc,upi,nb",
+		"billing": map[string]any{
+			"country": "IN",
 		},
-		OrderNote: "BucketCheap Wallet Recharge",
-		OrderTags: map[string]string{
+		"product_cart": []map[string]any{
+			{
+				"product_id": productID,
+				"quantity":   1,
+			},
+		},
+		"currency":   "INR",
+		"return_url": fmt.Sprintf("%s/dashboard/billing/callback", baseURL),
+		"metadata": map[string]string{
 			"user_id":       user.ID,
-			"amount_paise":  fmt.Sprintf("%d", creditPaise),
+			"credit_paise":  fmt.Sprintf("%d", creditPaise),
+			"order_time":    fmt.Sprintf("%d", time.Now().UnixMilli()),
 		},
 	}
 
 	body, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequest("POST", cashfreeBaseURL+"/orders", bytes.NewReader(body))
+	req, _ := http.NewRequest("POST", dodopayBaseURL, bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-client-id", appID)
-	req.Header.Set("x-client-secret", secretKey)
-	req.Header.Set("x-api-version", "2025-01-01")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Printf("ERROR Cashfree request: %v", err)
+		log.Printf("ERROR DodoPay request: %v", err)
 		http.Redirect(w, r, "/dashboard/billing", http.StatusSeeOther)
 		return
 	}
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != 200 {
-		log.Printf("ERROR Cashfree response %d: %s", resp.StatusCode, string(respBody))
+	if resp.StatusCode != 200 && resp.StatusCode != 201 {
+		log.Printf("ERROR DodoPay response %d: %s", resp.StatusCode, string(respBody))
 		http.Redirect(w, r, "/dashboard/billing", http.StatusSeeOther)
 		return
 	}
 
-	var cfResp cashfreeOrderResponse
-	json.Unmarshal(respBody, &cfResp)
+	var result map[string]any
+	json.Unmarshal(respBody, &result)
 
-	if cfResp.PaymentSessionID != "" {
-		// Render checkout page with Cashfree JS SDK
-		render(w, "checkout.html", map[string]any{"PaymentSessionID": cfResp.PaymentSessionID})
+	// Try checkout_url or url field
+	checkoutURL := ""
+	if u, ok := result["url"].(string); ok && u != "" {
+		checkoutURL = u
+	} else if u, ok := result["checkout_url"].(string); ok && u != "" {
+		checkoutURL = u
+	}
+
+	if checkoutURL != "" {
+		http.Redirect(w, r, checkoutURL, http.StatusSeeOther)
 	} else {
-		log.Printf("ERROR Cashfree no payment_session_id: %s", string(respBody))
+		log.Printf("ERROR DodoPay no checkout URL in response: %s", string(respBody))
 		http.Redirect(w, r, "/dashboard/billing", http.StatusSeeOther)
 	}
 }
 
-// HandleBillingCallback handles return from Cashfree after payment
+// HandleBillingCallback handles return from DodoPay after payment
 func HandleBillingCallback(w http.ResponseWriter, r *http.Request) {
-	// Don't credit here — webhook handles it (with dedup).
-	// Just redirect user back to billing page.
 	http.Redirect(w, r, "/dashboard/billing", http.StatusSeeOther)
 }
 
-// HandleCashfreeWebhook handles webhook notifications from Cashfree
-func HandleCashfreeWebhook(w http.ResponseWriter, r *http.Request) {
+// HandleDodopayWebhook handles webhook notifications from DodoPay
+func HandleDodopayWebhook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -153,60 +129,53 @@ func HandleCashfreeWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Cashfree webhook received: %s", string(body))
+	log.Printf("DodoPay webhook: %s", string(body))
 
-	// Parse webhook payload
-	var payload struct {
-		Type      string `json:"type"`
-		EventTime string `json:"event_time"`
-		Data      struct {
-			Order struct {
-				OrderID       string  `json:"order_id"`
-				OrderAmount   float64 `json:"order_amount"`
-				OrderCurrency string  `json:"order_currency"`
-				OrderTags     map[string]string `json:"order_tags"`
-			} `json:"order"`
-			Payment struct {
-				CfPaymentID   string  `json:"cf_payment_id"`
-				PaymentStatus string  `json:"payment_status"`
-				PaymentAmount float64 `json:"payment_amount"`
-			} `json:"payment"`
-		} `json:"data"`
-	}
-
+	var payload map[string]any
 	if err := json.Unmarshal(body, &payload); err != nil {
-		log.Printf("ERROR parsing Cashfree webhook: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	// Only process successful payments
-	if payload.Type != "PAYMENT_SUCCESS_WEBHOOK" && payload.Type != "PAYMENT_SUCCESS" {
-		w.WriteHeader(http.StatusOK)
-		return
+	// Extract payment data
+	data, _ := payload["data"].(map[string]any)
+	if data == nil {
+		// Try top-level fields
+		data = payload
 	}
 
-	if payload.Data.Payment.PaymentStatus != "SUCCESS" {
-		w.WriteHeader(http.StatusOK)
-		return
+	status, _ := data["status"].(string)
+	metadata, _ := data["metadata"].(map[string]any)
+	if metadata == nil {
+		if order, ok := data["order"].(map[string]any); ok {
+			metadata, _ = order["metadata"].(map[string]any)
+		}
 	}
 
-	userID := payload.Data.Order.OrderTags["user_id"]
-	amountStr := payload.Data.Order.OrderTags["amount_paise"]
-	paymentRef := payload.Data.Payment.CfPaymentID
+	paymentID := ""
+	if pid, ok := data["payment_id"].(string); ok {
+		paymentID = pid
+	} else if pid, ok := data["id"].(string); ok {
+		paymentID = pid
+	}
 
-	if userID != "" && amountStr != "" {
-		amountPaise, _ := strconv.ParseInt(amountStr, 10, 64)
-		if amountPaise > 0 {
-			// Check for duplicate
-			var exists int
-			db.DB.QueryRow(`SELECT COUNT(*) FROM transactions WHERE dodopay_ref = ?`, paymentRef).Scan(&exists)
-			if exists == 0 {
-				db.CreditWallet(userID, amountPaise,
-					fmt.Sprintf("Recharge ₹%d.%02d", amountPaise/100, amountPaise%100),
-					paymentRef)
-				log.Printf("Webhook: wallet credited user=%s amount=%d payment=%s",
-					userID, amountPaise, paymentRef)
+	if (status == "succeeded" || status == "paid" || status == "PAID") && metadata != nil {
+		userID, _ := metadata["user_id"].(string)
+		creditStr, _ := metadata["credit_paise"].(string)
+
+		if userID != "" && creditStr != "" {
+			creditPaise, _ := strconv.ParseInt(creditStr, 10, 64)
+			if creditPaise > 0 && paymentID != "" {
+				// Dedup check
+				var exists int
+				db.DB.QueryRow(`SELECT COUNT(*) FROM transactions WHERE dodopay_ref = ?`, paymentID).Scan(&exists)
+				if exists == 0 {
+					db.CreditWallet(userID, creditPaise,
+						fmt.Sprintf("Recharge ₹%d.%02d", creditPaise/100, creditPaise%100),
+						paymentID)
+					log.Printf("Webhook: wallet credited user=%s credits=₹%d.%02d payment=%s",
+						userID, creditPaise/100, creditPaise%100, paymentID)
+				}
 			}
 		}
 	}
