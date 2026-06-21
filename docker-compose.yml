@@ -16,9 +16,9 @@ services:
       - SMTP_USER=no-reply@postcard.rest
       - SMTP_PASSWORD=jWUEQ8YaHSvifpg
       - SMTP_FROM=no-reply@postcard.rest
-      - CASHFREE_APP_ID=${CASHFREE_APP_ID}
-      - CASHFREE_SECRET_KEY=${CASHFREE_SECRET_KEY}
-      - CASHFREE_WEBHOOK_SECRET=${CASHFREE_WEBHOOK_SECRET}
+      - CASHFREE_APP_ID=12663165ca5e2021833bd87e7a56136621
+      - CASHFREE_SECRET_KEY=cfsk_ma_prod_69c988de553893e8f6621ff946cb20ef_17928f09
+      - CASHFREE_WEBHOOK_SECRET=ow0yogt8xzpgoawa5krz
       - BASE_URL=https://bucketcheap.com
       - ADMIN_EMAIL=bucketcheap@tanay.co.in
       - ADMIN_PASSWORD=BucketCheap2026
