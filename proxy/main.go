@@ -1,66 +1,88 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strconv"
 	"time"
 )
 
 const (
 	listenAddr  = ":9000"
 	backendAddr = "http://127.0.0.1:9001"
+	// Max body to buffer: 100MB (multipart parts are 8MB, single PUTs up to 5GB won't use this path)
+	maxBufferSize = 100 * 1024 * 1024
 )
 
-// contentLengthTransport wraps an http.RoundTripper and ensures
-// Content-Length header is explicitly set when ContentLength is known.
-// This prevents Go from switching to chunked transfer encoding.
-type contentLengthTransport struct {
-	rt http.RoundTripper
+type readCloserBuffer struct {
+	*bytes.Reader
 }
 
-func (t *contentLengthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if req.ContentLength > 0 {
-		req.Header.Set("Content-Length", strconv.FormatInt(req.ContentLength, 10))
-		req.TransferEncoding = nil // clear any chunked encoding
+func (r *readCloserBuffer) Close() error { return nil }
+func (r *readCloserBuffer) Len() int     { return r.Reader.Len() }
+
+func bufferBody(r *http.Request) (*readCloserBuffer, error) {
+	buf, err := io.ReadAll(io.LimitReader(r.Body, maxBufferSize))
+	r.Body.Close()
+	if err != nil {
+		return nil, err
 	}
-	return t.rt.RoundTrip(req)
+	return &readCloserBuffer{bytes.NewReader(buf)}, nil
 }
 
 func main() {
 	backend, _ := url.Parse(backendAddr)
 
-	baseTransport := &http.Transport{
-		MaxIdleConns:          100,
-		MaxIdleConnsPerHost:   100,
-		IdleConnTimeout:       90 * time.Second,
-		ResponseHeaderTimeout: 0, // no timeout — SFTP backend can be slow
-		DisableCompression:    true,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
-
 	proxy := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = backend.Scheme
 			req.URL.Host = backend.Host
-			// req.Host left unchanged — preserves original Host for S3 signature verification
+			// req.Host unchanged — preserves S3 signature
 
 			// Strip Expect: 100-continue — rclone doesn't handle it
 			req.Header.Del("Expect")
 		},
-		Transport:     &contentLengthTransport{rt: baseTransport},
-		FlushInterval: -1, // flush immediately for streaming
+		Transport: &http.Transport{
+			MaxIdleConns:          100,
+			MaxIdleConnsPerHost:   100,
+			IdleConnTimeout:       90 * time.Second,
+			ResponseHeaderTimeout: 3600 * time.Second, // 1hr for slow SFTP
+			DisableCompression:    true,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+		FlushInterval: -1, // flush response immediately for streaming downloads
 	}
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ContentLength < 0 && r.Body != nil && (r.Method == "PUT" || r.Method == "POST") {
+			// Body arrived chunked (Traefik strips Content-Length).
+			// Buffer to determine length. Multipart parts are 8MB max — safe.
+			body, err := bufferBody(r)
+			if err != nil {
+				log.Printf("ERROR buffering body: %v", err)
+				http.Error(w, "Failed to read body", http.StatusBadGateway)
+				return
+			}
+			r.Body = body
+			r.ContentLength = int64(body.Len())
+			r.Header.Set("Content-Length", fmt.Sprintf("%d", r.ContentLength))
+			r.TransferEncoding = nil
+			log.Printf("Buffered chunked %s %s: %d bytes", r.Method, r.URL.Path, r.ContentLength)
+		}
+		proxy.ServeHTTP(w, r)
+	})
 
 	server := &http.Server{
 		Addr:           listenAddr,
-		Handler:        proxy,
-		ReadTimeout:    0, // no limit — large uploads take minutes
-		WriteTimeout:   0, // no limit — large downloads take minutes
+		Handler:        handler,
+		ReadTimeout:    0,
+		WriteTimeout:   0,
 		IdleTimeout:    120 * time.Second,
-		MaxHeaderBytes: 1 << 20, // 1MB headers
+		MaxHeaderBytes: 1 << 20,
 	}
 
 	log.Printf("S3 proxy listening on %s → %s", listenAddr, backendAddr)
