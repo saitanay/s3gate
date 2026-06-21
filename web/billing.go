@@ -60,9 +60,15 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	amountPaise, _ := strconv.ParseInt(r.FormValue("amount"), 10, 64)
-	if amountPaise < 99900 { // Min ₹999
+	if amountPaise != 9900 && amountPaise != 99900 {
 		http.Redirect(w, r, "/dashboard/billing", http.StatusSeeOther)
 		return
+	}
+
+	// ₹999 gives ₹1188 credits (12 months)
+	creditPaise := amountPaise
+	if amountPaise == 99900 {
+		creditPaise = 118800
 	}
 
 	baseURL := os.Getenv("BASE_URL")
@@ -88,8 +94,8 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 		},
 		OrderNote: "BucketCheap Wallet Recharge",
 		OrderTags: map[string]string{
-			"user_id":      user.ID,
-			"amount_paise": fmt.Sprintf("%d", amountPaise),
+			"user_id":       user.ID,
+			"amount_paise":  fmt.Sprintf("%d", creditPaise),
 		},
 	}
 

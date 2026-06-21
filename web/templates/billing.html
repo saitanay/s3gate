@@ -32,11 +32,25 @@
             <!-- Recharge -->
             <div class="bg-white p-6 rounded-xl border">
                 <h3 class="text-sm font-medium text-gray-500 mb-3">Recharge Wallet</h3>
-                <form method="POST" action="/dashboard/billing/recharge">
-                    <input type="hidden" name="amount" value="99900">
-                    <button type="submit" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg text-sm hover:bg-green-700 font-medium">Recharge ₹999</button>
-                    <p class="text-xs text-gray-500 mt-2">Minimum recharge ₹999 (≈10 months). Powered by DodoPay.</p>
-                </form>
+                <div class="space-y-3">
+                    <!-- Yearly - highlighted -->
+                    <form method="POST" action="/dashboard/billing/recharge">
+                        <input type="hidden" name="amount" value="99900">
+                        <button type="submit" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg text-sm hover:bg-green-700 font-medium relative">
+                            <span class="absolute -top-2 right-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded">BEST VALUE</span>
+                            ₹999 — Get ₹1,188 credits (12 months)
+                        </button>
+                        <p class="text-xs text-green-700 font-medium mt-1 text-center">Save ₹189! That's 2 months free.</p>
+                    </form>
+                    <!-- Monthly -->
+                    <form method="POST" action="/dashboard/billing/recharge">
+                        <input type="hidden" name="amount" value="9900">
+                        <button type="submit" class="w-full bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg text-sm hover:bg-gray-200 border">
+                            ₹99 — 1 month
+                        </button>
+                    </form>
+                </div>
+                <p class="text-xs text-gray-500 mt-3">UPI, cards, netbanking accepted. Powered by Cashfree.</p>
             </div>
         </div>
 
