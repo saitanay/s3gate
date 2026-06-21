@@ -125,10 +125,8 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(respBody, &cfResp)
 
 	if cfResp.PaymentSessionID != "" {
-		// Redirect to Cashfree hosted checkout
-		checkoutURL := fmt.Sprintf("https://payments.cashfree.com/pgbillpay/order/%s/%s",
-			cfResp.OrderID, cfResp.PaymentSessionID)
-		http.Redirect(w, r, checkoutURL, http.StatusSeeOther)
+		// Render checkout page with Cashfree JS SDK
+		render(w, "checkout.html", map[string]any{"PaymentSessionID": cfResp.PaymentSessionID})
 	} else {
 		log.Printf("ERROR Cashfree no payment_session_id: %s", string(respBody))
 		http.Redirect(w, r, "/dashboard/billing", http.StatusSeeOther)
