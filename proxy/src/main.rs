@@ -7,6 +7,7 @@ use std::time::Duration;
 /// S3Gate reverse proxy — streams requests/responses without buffering,
 /// handles Expect: 100-continue by short-circuiting it to the client
 /// and stripping it before forwarding to rclone upstream.
+/// Preserves Content-Length to prevent chunked encoding conversion.
 struct S3Proxy;
 
 #[async_trait]
@@ -20,7 +21,6 @@ impl ProxyHttp for S3Proxy {
         _session: &mut Session,
         _ctx: &mut Self::CTX,
     ) -> Result<Box<HttpPeer>> {
-        // rclone serve s3 listens on 127.0.0.1:9001
         let mut peer = HttpPeer::new(("127.0.0.1", 9001), false, String::new());
 
         // Long timeouts for large file transfers (1GB+ at ~12 MiB/s)
@@ -33,13 +33,21 @@ impl ProxyHttp for S3Proxy {
 
     async fn upstream_request_filter(
         &self,
-        _session: &mut Session,
+        session: &mut Session,
         upstream_request: &mut RequestHeader,
         _ctx: &mut Self::CTX,
     ) -> Result<()> {
         // Strip Expect: 100-continue before forwarding to rclone.
         // Pingora already sent 100 Continue to the client when the body was polled.
         upstream_request.remove_header("Expect");
+
+        // Preserve Content-Length from downstream request.
+        // Without this, Pingora converts to chunked encoding when streaming,
+        // which breaks rclone's multipart upload (requires Content-Length).
+        if let Some(cl) = session.req_header().headers.get("content-length").cloned() {
+            upstream_request.insert_header("content-length", cl)?;
+        }
+
         Ok(())
     }
 }
