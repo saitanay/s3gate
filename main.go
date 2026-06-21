@@ -41,6 +41,8 @@ func main() {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		host := strings.Split(r.Host, ":")[0] // strip port
 
+		log.Printf("%s %s %s", r.Method, r.Host, r.URL.Path)
+
 		// Route to S3 if host starts with s3. OR request has AWS auth signature
 		if strings.HasPrefix(host, "s3.") || isS3Request(r) {
 			s3Handler.ServeHTTP(w, r)
