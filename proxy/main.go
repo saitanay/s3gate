@@ -60,18 +60,17 @@ func main() {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ContentLength < 0 && r.Body != nil && (r.Method == "PUT" || r.Method == "POST") {
 			// Body arrived chunked (Traefik strips Content-Length).
-			// Buffer to determine length. Multipart parts are 8MB max — safe.
+			// Buffer to determine length — needed because rclone requires Content-Length.
+			// AWS CLI multipart parts are 8MB default, max 100MB — safe to buffer.
 			body, err := bufferBody(r)
 			if err != nil {
-				log.Printf("ERROR buffering body: %v", err)
-				http.Error(w, "Failed to read body", http.StatusBadGateway)
-				return
+				log.Printf("WARN buffering body: %v (client likely disconnected)", err)
+				return // don't send error response — client is gone
 			}
 			r.Body = body
 			r.ContentLength = int64(body.Len())
 			r.Header.Set("Content-Length", fmt.Sprintf("%d", r.ContentLength))
 			r.TransferEncoding = nil
-			log.Printf("Buffered chunked %s %s: %d bytes", r.Method, r.URL.Path, r.ContentLength)
 		}
 		proxy.ServeHTTP(w, r)
 	})
