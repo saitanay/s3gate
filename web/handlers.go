@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -59,6 +60,7 @@ func RegisterRoutes(mux *http.ServeMux) {
 	// Dashboard (auth required)
 	mux.HandleFunc("/dashboard", AuthMiddleware(handleDashboard))
 	mux.HandleFunc("/dashboard/buckets", AuthMiddleware(handleBuckets))
+	mux.HandleFunc("/dashboard/buckets/create", AuthMiddleware(handleCreateBucket))
 	mux.HandleFunc("/dashboard/keys", AuthMiddleware(handleKeys))
 	mux.HandleFunc("/dashboard/keys/create", AuthMiddleware(handleCreateKey))
 	mux.HandleFunc("/dashboard/keys/revoke", AuthMiddleware(handleRevokeKey))
@@ -210,7 +212,75 @@ func handleBuckets(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	render(w, "buckets.html", map[string]any{"User": user})
+
+	buckets, _ := db.GetUserBuckets(user.ID)
+	render(w, "buckets.html", map[string]any{"User": user, "Buckets": buckets})
+}
+
+func handleCreateBucket(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Redirect(w, r, "/dashboard/buckets", http.StatusSeeOther)
+		return
+	}
+
+	user := GetCurrentUser(r)
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	name := strings.TrimSpace(strings.ToLower(r.FormValue("name")))
+
+	// Validate bucket name
+	if len(name) < 3 || len(name) > 63 {
+		buckets, _ := db.GetUserBuckets(user.ID)
+		render(w, "buckets.html", map[string]any{"User": user, "Buckets": buckets, "Error": "Bucket name must be 3-63 characters"})
+		return
+	}
+	if !isValidBucketName(name) {
+		buckets, _ := db.GetUserBuckets(user.ID)
+		render(w, "buckets.html", map[string]any{"User": user, "Buckets": buckets, "Error": "Bucket name can only contain lowercase letters, numbers, and hyphens"})
+		return
+	}
+
+	internalName := user.ID + "--" + name
+
+	// Check if already exists in DB
+	if db.BucketExists(internalName) {
+		buckets, _ := db.GetUserBuckets(user.ID)
+		render(w, "buckets.html", map[string]any{"User": user, "Buckets": buckets, "Error": "Bucket '" + name + "' already exists"})
+		return
+	}
+
+	// Record in DB
+	if err := db.CreateBucket(user.ID, name, internalName); err != nil {
+		buckets, _ := db.GetUserBuckets(user.ID)
+		render(w, "buckets.html", map[string]any{"User": user, "Buckets": buckets, "Error": "Failed to create bucket"})
+		return
+	}
+
+	// Create on SFTP in background (rclone mkdir)
+	go func() {
+		cmd := exec.Command("rclone", "mkdir", "storagebox:./"+internalName)
+		if err := cmd.Run(); err != nil {
+			log.Printf("ERROR creating bucket on SFTP %s: %v", internalName, err)
+		}
+	}()
+
+	log.Printf("Bucket created: %s (user=%s)", name, user.ID)
+	http.Redirect(w, r, "/dashboard/buckets", http.StatusSeeOther)
+}
+
+func isValidBucketName(name string) bool {
+	for _, c := range name {
+		if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-') {
+			return false
+		}
+	}
+	if name[0] == '-' || name[len(name)-1] == '-' {
+		return false
+	}
+	return true
 }
 
 func handleKeys(w http.ResponseWriter, r *http.Request) {

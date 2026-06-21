@@ -88,6 +88,16 @@ func migrate() {
 		PRIMARY KEY (user_id, date)
 	);
 
+	CREATE TABLE IF NOT EXISTS buckets (
+		id TEXT PRIMARY KEY,
+		user_id TEXT NOT NULL REFERENCES users(id),
+		name TEXT NOT NULL,
+		internal_name TEXT NOT NULL UNIQUE,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE UNIQUE INDEX IF NOT EXISTS idx_buckets_internal ON buckets(internal_name);
+
 	CREATE INDEX IF NOT EXISTS idx_api_keys_access_key ON api_keys(access_key) WHERE revoked_at IS NULL;
 	CREATE INDEX IF NOT EXISTS idx_auth_tokens_token ON auth_tokens(token);
 	CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);

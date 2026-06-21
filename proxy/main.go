@@ -19,6 +19,8 @@ import (
 	"sync"
 	"time"
 
+	"s3gate/db"
+
 	"github.com/google/uuid"
 )
 
@@ -150,6 +152,14 @@ func NewS3Handler() http.Handler {
 			r.ContentLength = int64(len(body))
 			r.Header.Set("Content-Length", fmt.Sprintf("%d", r.ContentLength))
 			r.TransferEncoding = nil
+		}
+
+		// Intercept CreateBucket (PUT /bucket with no key) to record in DB
+		if r.Method == "PUT" {
+			bucket, key := parseBucketKey(r)
+			if key == "" && bucket != "" && !query.Has("uploads") {
+				RecordBucketCreation(tenant.UserID, bucket)
+			}
 		}
 
 		reverseProxy.ServeHTTP(w, r)
@@ -386,5 +396,26 @@ func cleanupStaleUploads() {
 			}
 		}
 		uploadsMu.Unlock()
+	}
+}
+
+// RecordBucketCreation records a bucket created via S3 API into the DB
+func RecordBucketCreation(userID, internalBucketName string) {
+	prefix := userID + "--"
+	if !strings.HasPrefix(internalBucketName, prefix) {
+		return
+	}
+	name := strings.TrimPrefix(internalBucketName, prefix)
+	if name == "" {
+		return
+	}
+
+	// Skip if already recorded
+	if db.BucketExists(internalBucketName) {
+		return
+	}
+
+	if err := db.CreateBucket(userID, name, internalBucketName); err != nil {
+		log.Printf("WARN recording bucket %s: %v", name, err)
 	}
 }

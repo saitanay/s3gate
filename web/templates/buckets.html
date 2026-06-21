@@ -19,7 +19,45 @@
     </nav>
 
     <div class="max-w-6xl mx-auto px-4 py-8">
-        <h1 class="text-2xl font-bold mb-6">Buckets</h1>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">Buckets</h1>
+            <form method="POST" action="/dashboard/buckets/create" class="flex items-center space-x-2">
+                <input type="text" name="name" placeholder="my-bucket" required minlength="3" maxlength="63"
+                       pattern="[a-z0-9][a-z0-9\-]*[a-z0-9]" title="Lowercase letters, numbers, hyphens. Must start/end with letter or number."
+                       class="px-3 py-2 border rounded-lg text-sm w-48">
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">Create Bucket</button>
+            </form>
+        </div>
+
+        {{if .Error}}
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{{.Error}}</div>
+        {{end}}
+
+        <!-- Bucket List -->
+        <div class="bg-white rounded-xl border overflow-hidden mb-8">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="text-left px-4 py-3 font-medium text-gray-600">Bucket Name</th>
+                        <th class="text-left px-4 py-3 font-medium text-gray-600">S3 URI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Buckets}}
+                    <tr class="border-b">
+                        <td class="px-4 py-3 font-mono">{{.Name}}</td>
+                        <td class="px-4 py-3 text-gray-500 font-mono text-xs">s3://{{.Name}}</td>
+                    </tr>
+                    {{else}}
+                    <tr><td colspan="2" class="px-4 py-8 text-center text-gray-500">No buckets yet. Create one above or use the S3 API.</td></tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+
+        <p class="text-xs text-gray-500 mb-4">Bucket names: 3-63 chars, lowercase letters, numbers, hyphens. Must start/end with letter or number. Names are globally unique within BucketCheap.</p>
+
+        <!-- CLI Reference -->
         <div class="bg-white p-6 rounded-xl border">
             <p class="text-gray-600 mb-4">Manage buckets using the S3 API or AWS CLI:</p>
             <div class="bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-sm space-y-2">

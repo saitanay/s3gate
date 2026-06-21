@@ -315,3 +315,42 @@ func generateToken(bytes int) string {
 	rand.Read(b)
 	return hex.EncodeToString(b)
 }
+
+// Bucket operations
+
+type Bucket struct {
+	ID           string
+	UserID       string
+	Name         string
+	InternalName string
+	CreatedAt    time.Time
+}
+
+func CreateBucket(userID, name, internalName string) error {
+	id := uuid.New().String()
+	_, err := DB.Exec(`INSERT INTO buckets (id, user_id, name, internal_name) VALUES (?, ?, ?, ?)`,
+		id, userID, name, internalName)
+	return err
+}
+
+func GetUserBuckets(userID string) ([]Bucket, error) {
+	rows, err := DB.Query(`SELECT id, user_id, name, internal_name, created_at FROM buckets WHERE user_id = ? ORDER BY created_at DESC`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var buckets []Bucket
+	for rows.Next() {
+		var b Bucket
+		rows.Scan(&b.ID, &b.UserID, &b.Name, &b.InternalName, &b.CreatedAt)
+		buckets = append(buckets, b)
+	}
+	return buckets, nil
+}
+
+func BucketExists(internalName string) bool {
+	var count int
+	DB.QueryRow(`SELECT COUNT(*) FROM buckets WHERE internal_name = ?`, internalName).Scan(&count)
+	return count > 0
+}
