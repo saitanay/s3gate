@@ -18,6 +18,7 @@ services:
       - SMTP_FROM=no-reply@postcard.rest
       - CASHFREE_APP_ID=${CASHFREE_APP_ID}
       - CASHFREE_SECRET_KEY=${CASHFREE_SECRET_KEY}
+      - CASHFREE_WEBHOOK_SECRET=${CASHFREE_WEBHOOK_SECRET}
       - BASE_URL=https://bucketcheap.com
       - ADMIN_EMAIL=bucketcheap@tanay.co.in
       - ADMIN_PASSWORD=BucketCheap2026
