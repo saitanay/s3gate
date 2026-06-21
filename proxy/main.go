@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"time"
 )
 
@@ -14,80 +14,34 @@ const (
 )
 
 func main() {
-	transport := &http.Transport{
-		MaxIdleConns:        100,
-		MaxIdleConnsPerHost: 100,
-		IdleConnTimeout:     90 * time.Second,
-		// No timeout on response header — backend may be slow (SFTP)
-		ResponseHeaderTimeout: 0,
-		// Disable compression to preserve Content-Length
-		DisableCompression: true,
-		// Send Expect: 100-continue to backend, wait up to 1s
-		ExpectContinueTimeout: 1 * time.Second,
+	backend, _ := url.Parse(backendAddr)
+
+	proxy := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = backend.Scheme
+			req.URL.Host = backend.Host
+			req.Host = backend.Host
+
+			// Strip Expect: 100-continue — rclone doesn't handle it
+			req.Header.Del("Expect")
+		},
+		Transport: &http.Transport{
+			MaxIdleConns:          100,
+			MaxIdleConnsPerHost:   100,
+			IdleConnTimeout:       90 * time.Second,
+			ResponseHeaderTimeout: 0, // no timeout — SFTP backend can be slow
+			DisableCompression:    true,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+		FlushInterval: -1, // flush immediately for streaming
 	}
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Build upstream request
-		upstreamURL := backendAddr + r.URL.RequestURI()
-		proxyReq, err := http.NewRequestWithContext(r.Context(), r.Method, upstreamURL, r.Body)
-		if err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-
-		// Copy all headers — preserves Content-Length, Content-Type, Authorization, etc.
-		for key, values := range r.Header {
-			for _, v := range values {
-				proxyReq.Header.Add(key, v)
-			}
-		}
-
-		// Preserve Content-Length explicitly
-		if r.ContentLength >= 0 {
-			proxyReq.ContentLength = r.ContentLength
-			proxyReq.Header.Set("Content-Length", fmt.Sprintf("%d", r.ContentLength))
-		}
-
-		// Force identity transfer encoding (prevent chunked)
-		proxyReq.TransferEncoding = []string{"identity"}
-
-		// Strip Expect header — we handle 100-continue at this layer
-		// Backend (rclone) doesn't support it
-		proxyReq.Header.Del("Expect")
-
-		// Forward Host
-		proxyReq.Host = r.Host
-
-		// Execute
-		resp, err := transport.RoundTrip(proxyReq)
-		if err != nil {
-			log.Printf("upstream error: %v", err)
-			http.Error(w, "Bad Gateway", http.StatusBadGateway)
-			return
-		}
-		defer resp.Body.Close()
-
-		// Copy response headers
-		for key, values := range resp.Header {
-			for _, v := range values {
-				w.Header().Add(key, v)
-			}
-		}
-		w.WriteHeader(resp.StatusCode)
-
-		// Stream response body
-		io.Copy(w, resp.Body)
-	})
-
 	server := &http.Server{
-		Addr:              listenAddr,
-		Handler:           handler,
-		ReadHeaderTimeout: 10 * time.Second,
-		// No read/write timeout — large transfers take minutes
-		ReadTimeout:  0,
-		WriteTimeout: 0,
-		IdleTimeout:  120 * time.Second,
-		// Allow large request bodies
+		Addr:           listenAddr,
+		Handler:        proxy,
+		ReadTimeout:    0, // no limit — large uploads take minutes
+		WriteTimeout:   0, // no limit — large downloads take minutes
+		IdleTimeout:    120 * time.Second,
 		MaxHeaderBytes: 1 << 20, // 1MB headers
 	}
 
