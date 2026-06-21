@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use pingora::prelude::*;
 use pingora::proxy::{ProxyHttp, Session};
 use pingora::upstreams::peer::HttpPeer;
+use std::time::Duration;
 
 /// S3Gate reverse proxy — streams requests/responses without buffering,
 /// handles Expect: 100-continue by short-circuiting it to the client
@@ -20,8 +21,14 @@ impl ProxyHttp for S3Proxy {
         _ctx: &mut Self::CTX,
     ) -> Result<Box<HttpPeer>> {
         // rclone serve s3 listens on 127.0.0.1:9001
-        let peer = Box::new(HttpPeer::new(("127.0.0.1", 9001), false, String::new()));
-        Ok(peer)
+        let mut peer = HttpPeer::new(("127.0.0.1", 9001), false, String::new());
+
+        // Long timeouts for large file transfers (1GB+ at ~12 MiB/s)
+        peer.options.connection_timeout = Some(Duration::from_secs(10));
+        peer.options.read_timeout = Some(Duration::from_secs(3600));
+        peer.options.write_timeout = Some(Duration::from_secs(3600));
+
+        Ok(Box::new(peer))
     }
 
     async fn upstream_request_filter(
