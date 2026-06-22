@@ -185,19 +185,19 @@ func HandleCashfreeWebhook(w http.ResponseWriter, r *http.Request) {
 
 	userID := payload.Data.Order.OrderTags["user_id"]
 	creditStr := payload.Data.Order.OrderTags["credit_paise"]
-	paymentRef := payload.Data.Payment.CfPaymentID.String()
+	orderID := payload.Data.Order.OrderID
 
-	if userID != "" && creditStr != "" && paymentRef != "" {
+	if userID != "" && creditStr != "" && orderID != "" {
 		creditPaise, _ := strconv.ParseInt(creditStr, 10, 64)
 		if creditPaise > 0 {
 			err := db.CreditWallet(userID, creditPaise,
 				fmt.Sprintf("Recharge ₹%d.%02d", creditPaise/100, creditPaise%100),
-				paymentRef)
+				orderID)
 			if err != nil {
-				log.Printf("Webhook: credit skipped (likely duplicate) user=%s payment=%s err=%v", userID, paymentRef, err)
+				log.Printf("Webhook: credit skipped (likely duplicate) user=%s order=%s err=%v", userID, orderID, err)
 			} else {
-				log.Printf("Webhook: wallet credited user=%s credits=₹%d.%02d payment=%s",
-					userID, creditPaise/100, creditPaise%100, paymentRef)
+				log.Printf("Webhook: wallet credited user=%s credits=₹%d.%02d order=%s",
+					userID, creditPaise/100, creditPaise%100, orderID)
 			}
 		}
 	}

@@ -107,5 +107,9 @@ func migrate() {
 	if err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
+
+	// Migration: add unique index on dodopay_ref (handles existing DBs)
+	DB.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_dodopay_ref ON transactions(dodopay_ref) WHERE dodopay_ref IS NOT NULL`)
+
 	log.Println("Database migrated")
 }
