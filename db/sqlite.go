@@ -77,7 +77,7 @@ func migrate() {
 		type TEXT NOT NULL,
 		amount_paise INTEGER NOT NULL,
 		description TEXT,
-		dodopay_ref TEXT,
+		dodopay_ref TEXT UNIQUE,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 

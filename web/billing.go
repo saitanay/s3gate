@@ -190,12 +190,12 @@ func HandleCashfreeWebhook(w http.ResponseWriter, r *http.Request) {
 	if userID != "" && creditStr != "" && paymentRef != "" {
 		creditPaise, _ := strconv.ParseInt(creditStr, 10, 64)
 		if creditPaise > 0 {
-			var exists int
-			db.DB.QueryRow(`SELECT COUNT(*) FROM transactions WHERE dodopay_ref = ?`, paymentRef).Scan(&exists)
-			if exists == 0 {
-				db.CreditWallet(userID, creditPaise,
-					fmt.Sprintf("Recharge ₹%d.%02d", creditPaise/100, creditPaise%100),
-					paymentRef)
+			err := db.CreditWallet(userID, creditPaise,
+				fmt.Sprintf("Recharge ₹%d.%02d", creditPaise/100, creditPaise%100),
+				paymentRef)
+			if err != nil {
+				log.Printf("Webhook: credit skipped (likely duplicate) user=%s payment=%s err=%v", userID, paymentRef, err)
+			} else {
 				log.Printf("Webhook: wallet credited user=%s credits=₹%d.%02d payment=%s",
 					userID, creditPaise/100, creditPaise%100, paymentRef)
 			}
