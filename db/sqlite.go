@@ -108,7 +108,8 @@ func migrate() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	// Migration: add unique index on dodopay_ref (handles existing DBs)
+	// Migration: deduplicate existing rows, then add unique index
+	DB.Exec(`DELETE FROM transactions WHERE rowid NOT IN (SELECT MIN(rowid) FROM transactions GROUP BY dodopay_ref)`)
 	DB.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_dodopay_ref ON transactions(dodopay_ref) WHERE dodopay_ref IS NOT NULL`)
 
 	log.Println("Database migrated")

@@ -215,13 +215,20 @@ func CreditWallet(userID string, amountPaise int64, description, dodopayRef stri
 		return err
 	}
 
-	// Insert transaction first — UNIQUE constraint on dodopay_ref prevents duplicates
+	// INSERT OR IGNORE - if dodopay_ref already exists, affected=0
 	id := uuid.New().String()
-	_, err = tx.Exec(`INSERT INTO transactions (id, user_id, type, amount_paise, description, dodopay_ref) VALUES (?, ?, 'recharge', ?, ?, ?)`,
+	result, err := tx.Exec(`INSERT OR IGNORE INTO transactions (id, user_id, type, amount_paise, description, dodopay_ref) VALUES (?, ?, 'recharge', ?, ?, ?)`,
 		id, userID, amountPaise, description, dodopayRef)
 	if err != nil {
 		tx.Rollback()
-		return err // unique constraint = duplicate, caller ignores
+		return err
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		// Duplicate - already credited
+		tx.Rollback()
+		return fmt.Errorf("duplicate payment: %s", dodopayRef)
 	}
 
 	_, err = tx.Exec(`UPDATE wallet SET balance_paise = balance_paise + ? WHERE user_id = ?`, amountPaise, userID)
