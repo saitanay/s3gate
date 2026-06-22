@@ -59,7 +59,7 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	amountPaise, _ := strconv.ParseInt(r.FormValue("amount"), 10, 64)
-	if amountPaise != 9900 && amountPaise != 99900 {
+	if amountPaise != 900 && amountPaise != 9900 && amountPaise != 99900 {
 		http.Redirect(w, r, "/dashboard/billing", http.StatusSeeOther)
 		return
 	}
