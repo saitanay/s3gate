@@ -522,7 +522,7 @@ func handleCreateBucketS3(w http.ResponseWriter, r *http.Request, tenant *Tenant
 	rcResp, err := rcClient.Do(rcReq)
 	if err != nil {
 		log.Printf("ERROR CreateBucket RC mkdir %s: %v", internalBucket, err)
-		S3ErrorResponse(w, "InternalError", "Failed to create bucket on storage", http.StatusInternalServerError)
+		S3ErrorResponse(w, "InternalError", fmt.Sprintf("RC connect error: %v", err), http.StatusInternalServerError)
 		return
 	}
 	defer rcResp.Body.Close()
@@ -530,7 +530,7 @@ func handleCreateBucketS3(w http.ResponseWriter, r *http.Request, tenant *Tenant
 
 	if rcResp.StatusCode != 200 {
 		log.Printf("ERROR CreateBucket RC mkdir %s: status=%d body=%s", internalBucket, rcResp.StatusCode, string(rcRespBody))
-		S3ErrorResponse(w, "InternalError", "Failed to create bucket on storage", http.StatusInternalServerError)
+		S3ErrorResponse(w, "InternalError", fmt.Sprintf("RC mkdir status=%d body=%s", rcResp.StatusCode, string(rcRespBody)), http.StatusInternalServerError)
 		return
 	}
 
