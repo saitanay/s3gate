@@ -43,7 +43,11 @@ EOF
 echo "Starting rclone S3 gateway on port 9001..."
 rclone serve s3 storagebox:./ \
   --addr ":9001" \
+  --rc \
+  --rc-addr ":9002" \
+  --rc-no-auth \
   --vfs-cache-mode off \
+  --dir-cache-time 5s \
   --transfers 8 \
   --checkers 8 \
   --sftp-concurrency 8 \

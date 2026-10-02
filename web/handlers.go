@@ -284,6 +284,19 @@ func handleCreateBucket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Bucket created: %s (user=%s)", name, user.ID)
+
+	// Invalidate rclone VFS cache so S3 API sees the new bucket
+	go func() {
+		req, _ := http.NewRequest("POST", "http://127.0.0.1:9002/vfs/forget", strings.NewReader("{}"))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			log.Printf("WARN VFS cache invalidation: %v", err)
+			return
+		}
+		resp.Body.Close()
+	}()
+
 	http.Redirect(w, r, "/dashboard/buckets", http.StatusSeeOther)
 }
 

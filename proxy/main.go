@@ -28,6 +28,7 @@ import (
 const (
 	listenAddr   = ":9000"
 	backendAddr  = "http://127.0.0.1:9001"
+	rcAddr       = "http://127.0.0.1:9002"
 	uploadDir    = "/data/uploads"
 )
 
@@ -187,6 +188,18 @@ func NewS3Handler() http.Handler {
 
 	log.Printf("S3 proxy handler ready (multipart assembly on %s)", uploadDir)
 	return handler
+}
+
+// invalidateVFSCache tells rclone serve s3 to forget its directory cache
+func invalidateVFSCache() {
+	req, _ := http.NewRequest("POST", rcAddr+"/vfs/forget", strings.NewReader("{}"))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Printf("WARN VFS cache invalidation failed: %v", err)
+		return
+	}
+	resp.Body.Close()
 }
 
 func parseBucketKey(r *http.Request) (bucket, key string) {
@@ -516,6 +529,9 @@ func handleCreateBucketS3(w http.ResponseWriter, r *http.Request, tenant *Tenant
 		// Don't fail — bucket exists on storage, DB record is best-effort
 	}
 
+	// Invalidate rclone VFS cache so ListBuckets/ListObjects sees the new bucket
+	invalidateVFSCache()
+
 	log.Printf("CreateBucket: %s (user=%s)", userBucketName, tenant.UserID[:8])
 
 	w.Header().Set("Content-Type", "application/xml")
@@ -546,6 +562,9 @@ func handleDeleteBucketS3(w http.ResponseWriter, r *http.Request, tenant *Tenant
 
 	// Remove from DB
 	db.DeleteBucket(internalBucket)
+
+	// Invalidate rclone VFS cache
+	invalidateVFSCache()
 
 	log.Printf("DeleteBucket: %s (user=%s)", userBucketName, tenant.UserID[:8])
 	w.WriteHeader(http.StatusNoContent)
