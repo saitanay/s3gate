@@ -84,7 +84,7 @@ func HandleRecharge(w http.ResponseWriter, r *http.Request) {
 		CustomerDetails: cashfreeCustomer{
 			CustomerID:    user.ID,
 			CustomerEmail: user.Email,
-			CustomerPhone: "9999999999",
+			CustomerPhone: "9999999999", // Cashfree requires a phone; we don't collect one
 		},
 		OrderMeta: cashfreeOrderMeta{
 			ReturnURL:      fmt.Sprintf("%s/dashboard/billing/callback?order_id={order_id}", baseURL),

@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/xml"
@@ -120,8 +121,32 @@ func NewS3Handler() http.Handler {
 			}
 		}
 
+		// Intercept ListBuckets (GET / with no bucket) — filter to tenant only
+		if r.Method == "GET" && (r.URL.Path == "/" || r.URL.Path == "") && !query.Has("prefix") {
+			handleListBuckets(w, r, tenant, reverseProxy)
+			return
+		}
+
 		// Rewrite path for tenant isolation
 		RewritePathForTenant(r, tenant.UserID)
+
+		// Intercept CreateBucket (PUT /bucket with no key) — use rclone mkdir directly
+		if r.Method == "PUT" {
+			bucket, key := parseBucketKey(r)
+			if key == "" && bucket != "" && !query.Has("uploads") {
+				handleCreateBucketS3(w, r, tenant, bucket)
+				return
+			}
+		}
+
+		// Intercept DeleteBucket (DELETE /bucket with no key)
+		if r.Method == "DELETE" {
+			bucket, key := parseBucketKey(r)
+			if key == "" && bucket != "" && !query.Has("uploadId") {
+				handleDeleteBucketS3(w, r, tenant, bucket)
+				return
+			}
+		}
 
 		// Intercept multipart operations
 		if r.Method == "POST" && query.Has("uploads") {
@@ -153,14 +178,6 @@ func NewS3Handler() http.Handler {
 			r.ContentLength = int64(len(body))
 			r.Header.Set("Content-Length", fmt.Sprintf("%d", r.ContentLength))
 			r.TransferEncoding = nil
-		}
-
-		// Intercept CreateBucket (PUT /bucket with no key) to record in DB
-		if r.Method == "PUT" {
-			bucket, key := parseBucketKey(r)
-			if key == "" && bucket != "" && !query.Has("uploads") {
-				RecordBucketCreation(tenant.UserID, bucket)
-			}
 		}
 
 		reverseProxy.ServeHTTP(w, r)
@@ -400,23 +417,136 @@ func cleanupStaleUploads() {
 	}
 }
 
-// RecordBucketCreation records a bucket created via S3 API into the DB
-func RecordBucketCreation(userID, internalBucketName string) {
-	prefix := userID + "--"
-	if !strings.HasPrefix(internalBucketName, prefix) {
+// ListBucketsResult is the S3 XML response for ListBuckets
+type ListBucketsResult struct {
+	XMLName xml.Name         `xml:"ListAllMyBucketsResult"`
+	Xmlns   string           `xml:"xmlns,attr"`
+	Owner   ListBucketsOwner `xml:"Owner"`
+	Buckets ListBucketsList  `xml:"Buckets"`
+}
+
+type ListBucketsOwner struct {
+	ID          string `xml:"ID"`
+	DisplayName string `xml:"DisplayName"`
+}
+
+type ListBucketsList struct {
+	Bucket []ListBucketsEntry `xml:"Bucket"`
+}
+
+type ListBucketsEntry struct {
+	Name         string `xml:"Name"`
+	CreationDate string `xml:"CreationDate"`
+}
+
+// handleListBuckets intercepts ListBuckets to filter by tenant
+func handleListBuckets(w http.ResponseWriter, r *http.Request, tenant *TenantContext, rp *httputil.ReverseProxy) {
+	// Query rclone backend
+	backendReq, _ := http.NewRequest("GET", backendAddr+"/", nil)
+	resp, err := http.DefaultClient.Do(backendReq)
+	if err != nil {
+		log.Printf("ERROR ListBuckets backend: %v", err)
+		S3ErrorResponse(w, "InternalError", "Backend error", http.StatusInternalServerError)
 		return
 	}
-	name := strings.TrimPrefix(internalBucketName, prefix)
-	if name == "" {
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	// Parse the rclone response
+	var allBuckets ListBucketsResult
+	if err := xml.Unmarshal(body, &allBuckets); err != nil {
+		log.Printf("ERROR parsing ListBuckets: %v", err)
+		S3ErrorResponse(w, "InternalError", "Parse error", http.StatusInternalServerError)
 		return
 	}
 
-	// Skip if already recorded
-	if db.BucketExists(internalBucketName) {
+	// Filter to only this tenant's buckets, strip prefix
+	prefix := tenant.UserID + "--"
+	var filtered []ListBucketsEntry
+	for _, b := range allBuckets.Buckets.Bucket {
+		if strings.HasPrefix(b.Name, prefix) {
+			filtered = append(filtered, ListBucketsEntry{
+				Name:         strings.TrimPrefix(b.Name, prefix),
+				CreationDate: b.CreationDate,
+			})
+		}
+	}
+
+	result := ListBucketsResult{
+		Xmlns: "http://s3.amazonaws.com/doc/2006-03-01/",
+		Owner: ListBucketsOwner{ID: tenant.UserID, DisplayName: tenant.UserID},
+		Buckets: ListBucketsList{Bucket: filtered},
+	}
+
+	w.Header().Set("Content-Type", "application/xml")
+	w.WriteHeader(http.StatusOK)
+	var buf bytes.Buffer
+	buf.WriteString(xml.Header)
+	xml.NewEncoder(&buf).Encode(result)
+	w.Write(buf.Bytes())
+}
+
+// handleCreateBucketS3 creates a bucket via rclone mkdir (bypasses rclone serve s3)
+func handleCreateBucketS3(w http.ResponseWriter, r *http.Request, tenant *TenantContext, internalBucket string) {
+	// internalBucket is already rewritten to userId--name
+	userBucketName := strings.TrimPrefix(internalBucket, tenant.UserID+"--")
+
+	// Check if already exists
+	if db.BucketExists(internalBucket) {
+		// Bucket already exists — S3 returns 200 OK (idempotent)
+		w.Header().Set("Content-Type", "application/xml")
+		w.Header().Set("Location", "/"+userBucketName)
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	if err := db.CreateBucket(userID, name, internalBucketName); err != nil {
-		log.Printf("WARN recording bucket %s: %v", name, err)
+	// Create on SFTP via rclone mkdir
+	cmd := exec.Command("rclone", "mkdir", "storagebox:./"+internalBucket)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("ERROR CreateBucket rclone mkdir %s: %v: %s", internalBucket, err, string(output))
+		S3ErrorResponse(w, "InternalError", "Failed to create bucket on storage", http.StatusInternalServerError)
+		return
 	}
+
+	// Record in DB
+	if err := db.CreateBucket(tenant.UserID, userBucketName, internalBucket); err != nil {
+		log.Printf("WARN recording bucket %s in DB: %v", userBucketName, err)
+		// Don't fail — bucket exists on storage, DB record is best-effort
+	}
+
+	log.Printf("CreateBucket: %s (user=%s)", userBucketName, tenant.UserID[:8])
+
+	w.Header().Set("Content-Type", "application/xml")
+	w.Header().Set("Location", "/"+userBucketName)
+	w.WriteHeader(http.StatusOK)
+}
+
+// handleDeleteBucketS3 deletes a bucket via rclone
+func handleDeleteBucketS3(w http.ResponseWriter, r *http.Request, tenant *TenantContext, internalBucket string) {
+	userBucketName := strings.TrimPrefix(internalBucket, tenant.UserID+"--")
+
+	// Check if bucket has objects (rclone ls)
+	cmd := exec.Command("rclone", "ls", "storagebox:./"+internalBucket, "--max-depth", "1")
+	output, err := cmd.Output()
+	if err == nil && len(strings.TrimSpace(string(output))) > 0 {
+		S3ErrorResponse(w, "BucketNotEmpty", "The bucket you tried to delete is not empty", http.StatusConflict)
+		return
+	}
+
+	// Remove from SFTP
+	cmd = exec.Command("rclone", "rmdir", "storagebox:./"+internalBucket)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("ERROR DeleteBucket rclone rmdir %s: %v: %s", internalBucket, err, string(output))
+		S3ErrorResponse(w, "InternalError", "Failed to delete bucket", http.StatusInternalServerError)
+		return
+	}
+
+	// Remove from DB
+	db.DeleteBucket(internalBucket)
+
+	log.Printf("DeleteBucket: %s (user=%s)", userBucketName, tenant.UserID[:8])
+	w.WriteHeader(http.StatusNoContent)
 }

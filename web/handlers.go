@@ -271,13 +271,17 @@ func handleCreateBucket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create on SFTP in background (rclone mkdir)
-	go func() {
-		cmd := exec.Command("rclone", "mkdir", "storagebox:./"+internalName)
-		if err := cmd.Run(); err != nil {
-			log.Printf("ERROR creating bucket on SFTP %s: %v", internalName, err)
-		}
-	}()
+	// Create on SFTP synchronously (rclone mkdir)
+	cmd := exec.Command("rclone", "mkdir", "storagebox:./"+internalName)
+	output, cmdErr := cmd.CombinedOutput()
+	if cmdErr != nil {
+		log.Printf("ERROR creating bucket on SFTP %s: %v: %s", internalName, cmdErr, string(output))
+		// Remove DB record since storage creation failed
+		db.DeleteBucket(internalName)
+		buckets, _ := db.GetUserBuckets(user.ID)
+		render(w, "buckets.html", map[string]any{"User": user, "Buckets": buckets, "Error": "Failed to create bucket on storage. Please try again."})
+		return
+	}
 
 	log.Printf("Bucket created: %s (user=%s)", name, user.ID)
 	http.Redirect(w, r, "/dashboard/buckets", http.StatusSeeOther)

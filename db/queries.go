@@ -362,3 +362,8 @@ func BucketExists(internalName string) bool {
 	DB.QueryRow(`SELECT COUNT(*) FROM buckets WHERE internal_name = ?`, internalName).Scan(&count)
 	return count > 0
 }
+
+func DeleteBucket(internalName string) error {
+	_, err := DB.Exec(`DELETE FROM buckets WHERE internal_name = ?`, internalName)
+	return err
+}

@@ -1,8 +1,13 @@
 package proxy
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -18,7 +23,7 @@ type TenantContext struct {
 	Status    string
 }
 
-// AuthenticateS3Request extracts access key from AWS signature and resolves tenant
+// AuthenticateS3Request extracts access key from AWS signature, verifies signature, and resolves tenant
 func AuthenticateS3Request(r *http.Request) (*TenantContext, error) {
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
@@ -35,6 +40,14 @@ func AuthenticateS3Request(r *http.Request) (*TenantContext, error) {
 	apiKey, err := db.LookupAPIKey(accessKey)
 	if err != nil || apiKey == nil {
 		return nil, nil
+	}
+
+	// Verify AWS SigV4 signature
+	if strings.HasPrefix(auth, "AWS4-HMAC-SHA256") {
+		if !verifyAWSSigV4(r, auth, apiKey.SecretKey) {
+			log.Printf("SigV4 verification failed for access key %s", accessKey)
+			return nil, fmt.Errorf("signature mismatch")
+		}
 	}
 
 	// Get user
@@ -55,6 +68,169 @@ func AuthenticateS3Request(r *http.Request) (*TenantContext, error) {
 		AccessKey: accessKey,
 		Status:    user.Status,
 	}, nil
+}
+
+// verifyAWSSigV4 verifies AWS Signature Version 4
+func verifyAWSSigV4(r *http.Request, auth, secretKey string) bool {
+	// Parse: AWS4-HMAC-SHA256 Credential=key/date/region/s3/aws4_request, SignedHeaders=..., Signature=...
+	credScope, signedHeadersStr, providedSig := parseSigV4Auth(auth)
+	if credScope == "" || signedHeadersStr == "" || providedSig == "" {
+		log.Printf("SigV4: failed to parse auth header")
+		return false
+	}
+
+	// credScope = accessKey/20260101/us-east-1/s3/aws4_request
+	scopeParts := strings.SplitN(credScope, "/", 2)
+	if len(scopeParts) < 2 {
+		return false
+	}
+	scope := scopeParts[1] // date/region/s3/aws4_request
+	dateParts := strings.Split(scope, "/")
+	if len(dateParts) < 4 {
+		return false
+	}
+	dateStamp := dateParts[0]
+	region := dateParts[1]
+	service := dateParts[2]
+
+	// Build canonical request
+	signedHeaders := strings.Split(signedHeadersStr, ";")
+	sort.Strings(signedHeaders)
+
+	var canonicalHeaders strings.Builder
+	for _, h := range signedHeaders {
+		h = strings.TrimSpace(h)
+		var val string
+		if h == "host" {
+			val = r.Host
+		} else {
+			val = r.Header.Get(h)
+		}
+		canonicalHeaders.WriteString(h + ":" + strings.TrimSpace(val) + "\n")
+	}
+
+	// Payload hash — use x-amz-content-sha256 header if present
+	payloadHash := r.Header.Get("X-Amz-Content-Sha256")
+	if payloadHash == "" {
+		payloadHash = "UNSIGNED-PAYLOAD"
+	}
+
+	canonicalURI := r.URL.Path
+	if canonicalURI == "" {
+		canonicalURI = "/"
+	}
+
+	// Canonical query string
+	canonicalQueryString := buildCanonicalQueryString(r)
+
+	canonicalRequest := strings.Join([]string{
+		r.Method,
+		canonicalURI,
+		canonicalQueryString,
+		canonicalHeaders.String(),
+		signedHeadersStr,
+		payloadHash,
+	}, "\n")
+
+	// String to sign
+	amzDate := r.Header.Get("X-Amz-Date")
+	if amzDate == "" {
+		// Try Date header
+		amzDate = dateStamp + "T000000Z"
+	}
+
+	canonicalRequestHash := sha256Hex([]byte(canonicalRequest))
+	stringToSign := strings.Join([]string{
+		"AWS4-HMAC-SHA256",
+		amzDate,
+		scope,
+		canonicalRequestHash,
+	}, "\n")
+
+	// Derive signing key
+	signingKey := deriveSigningKey(secretKey, dateStamp, region, service)
+
+	// Calculate signature
+	calculatedSig := hex.EncodeToString(hmacSHA256(signingKey, []byte(stringToSign)))
+
+	if calculatedSig != providedSig {
+		log.Printf("SigV4: signature mismatch (calculated=%s...  provided=%s...)", calculatedSig[:16], providedSig[:min(16, len(providedSig))])
+		return false
+	}
+
+	return true
+}
+
+func parseSigV4Auth(auth string) (credential, signedHeaders, signature string) {
+	// AWS4-HMAC-SHA256 Credential=..., SignedHeaders=..., Signature=...
+	auth = strings.TrimPrefix(auth, "AWS4-HMAC-SHA256")
+	auth = strings.TrimSpace(auth)
+
+	for _, part := range strings.Split(auth, ",") {
+		part = strings.TrimSpace(part)
+		if strings.HasPrefix(part, "Credential=") {
+			credential = strings.TrimPrefix(part, "Credential=")
+		} else if strings.HasPrefix(part, "SignedHeaders=") {
+			signedHeaders = strings.TrimPrefix(part, "SignedHeaders=")
+		} else if strings.HasPrefix(part, "Signature=") {
+			signature = strings.TrimPrefix(part, "Signature=")
+		}
+	}
+	return
+}
+
+func buildCanonicalQueryString(r *http.Request) string {
+	query := r.URL.Query()
+	if len(query) == 0 {
+		return ""
+	}
+
+	var keys []string
+	for k := range query {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var parts []string
+	for _, k := range keys {
+		values := query[k]
+		sort.Strings(values)
+		for _, v := range values {
+			parts = append(parts, uriEncode(k)+"="+uriEncode(v))
+		}
+	}
+	return strings.Join(parts, "&")
+}
+
+func uriEncode(s string) string {
+	var buf strings.Builder
+	for _, b := range []byte(s) {
+		if (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') || b == '-' || b == '_' || b == '.' || b == '~' {
+			buf.WriteByte(b)
+		} else {
+			fmt.Fprintf(&buf, "%%%02X", b)
+		}
+	}
+	return buf.String()
+}
+
+func deriveSigningKey(secretKey, dateStamp, region, service string) []byte {
+	kDate := hmacSHA256([]byte("AWS4"+secretKey), []byte(dateStamp))
+	kRegion := hmacSHA256(kDate, []byte(region))
+	kService := hmacSHA256(kRegion, []byte(service))
+	kSigning := hmacSHA256(kService, []byte("aws4_request"))
+	return kSigning
+}
+
+func hmacSHA256(key, data []byte) []byte {
+	h := hmac.New(sha256.New, key)
+	h.Write(data)
+	return h.Sum(nil)
+}
+
+func sha256Hex(data []byte) string {
+	h := sha256.Sum256(data)
+	return hex.EncodeToString(h[:])
 }
 
 // CheckWriteAllowed verifies the tenant can write (status + quota)
