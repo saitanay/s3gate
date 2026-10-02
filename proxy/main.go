@@ -192,7 +192,7 @@ func NewS3Handler() http.Handler {
 
 // invalidateVFSCache tells rclone serve s3 to forget its directory cache
 func invalidateVFSCache() {
-	req, _ := http.NewRequest("POST", rcAddr+"/vfs/forget", strings.NewReader("{}"))
+	req, _ := http.NewRequest("POST", rcAddr+"/vfs/forget", strings.NewReader(`{"dir":""}`))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -515,7 +515,7 @@ func handleCreateBucketS3(w http.ResponseWriter, r *http.Request, tenant *Tenant
 	}
 
 	// Create via rclone RC API (uses the running rclone's SFTP connection pool)
-	rcBody := fmt.Sprintf(`{"fs":"storagebox:","remote":"./%s"}`, internalBucket)
+	rcBody := fmt.Sprintf(`{"fs":"storagebox:./","remote":"%s"}`, internalBucket)
 	rcReq, _ := http.NewRequest("POST", rcAddr+"/operations/mkdir", strings.NewReader(rcBody))
 	rcReq.Header.Set("Content-Type", "application/json")
 	rcClient := &http.Client{Timeout: 30 * time.Second}
@@ -569,7 +569,7 @@ func handleDeleteBucketS3(w http.ResponseWriter, r *http.Request, tenant *Tenant
 	}
 
 	// Remove via RC rmdir
-	rcBody = fmt.Sprintf(`{"fs":"storagebox:","remote":"./%s"}`, internalBucket)
+	rcBody = fmt.Sprintf(`{"fs":"storagebox:./","remote":"%s"}`, internalBucket)
 	rcReq, _ = http.NewRequest("POST", rcAddr+"/operations/rmdir", strings.NewReader(rcBody))
 	rcReq.Header.Set("Content-Type", "application/json")
 	rcResp, err = rcClient.Do(rcReq)

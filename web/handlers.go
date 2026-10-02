@@ -272,7 +272,7 @@ func handleCreateBucket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create on SFTP via rclone RC API
-	rcBody := fmt.Sprintf(`{"fs":"storagebox:","remote":"./%s"}`, internalName)
+	rcBody := fmt.Sprintf(`{"fs":"storagebox:./","remote":"%s"}`, internalName)
 	rcReq, _ := http.NewRequest("POST", "http://127.0.0.1:9002/operations/mkdir", strings.NewReader(rcBody))
 	rcReq.Header.Set("Content-Type", "application/json")
 	rcClient := &http.Client{Timeout: 30 * time.Second}
