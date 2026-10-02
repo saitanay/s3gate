@@ -500,7 +500,7 @@ func handleListBuckets(w http.ResponseWriter, r *http.Request, tenant *TenantCon
 	w.Write(buf.Bytes())
 }
 
-// handleCreateBucketS3 creates a bucket via rclone mkdir (bypasses rclone serve s3)
+// handleCreateBucketS3 creates a bucket via rclone RC API (bypasses rclone serve s3)
 func handleCreateBucketS3(w http.ResponseWriter, r *http.Request, tenant *TenantContext, internalBucket string) {
 	// internalBucket is already rewritten to userId--name
 	userBucketName := strings.TrimPrefix(internalBucket, tenant.UserID+"--")
@@ -514,11 +514,22 @@ func handleCreateBucketS3(w http.ResponseWriter, r *http.Request, tenant *Tenant
 		return
 	}
 
-	// Create on SFTP via rclone mkdir
-	cmd := exec.Command("rclone", "mkdir", "storagebox:./"+internalBucket)
-	output, err := cmd.CombinedOutput()
+	// Create via rclone RC API (uses the running rclone's SFTP connection pool)
+	rcBody := fmt.Sprintf(`{"fs":"storagebox:","remote":"./%s"}`, internalBucket)
+	rcReq, _ := http.NewRequest("POST", rcAddr+"/operations/mkdir", strings.NewReader(rcBody))
+	rcReq.Header.Set("Content-Type", "application/json")
+	rcClient := &http.Client{Timeout: 30 * time.Second}
+	rcResp, err := rcClient.Do(rcReq)
 	if err != nil {
-		log.Printf("ERROR CreateBucket rclone mkdir %s: %v: %s", internalBucket, err, string(output))
+		log.Printf("ERROR CreateBucket RC mkdir %s: %v", internalBucket, err)
+		S3ErrorResponse(w, "InternalError", "Failed to create bucket on storage", http.StatusInternalServerError)
+		return
+	}
+	defer rcResp.Body.Close()
+	rcRespBody, _ := io.ReadAll(rcResp.Body)
+
+	if rcResp.StatusCode != 200 {
+		log.Printf("ERROR CreateBucket RC mkdir %s: status=%d body=%s", internalBucket, rcResp.StatusCode, string(rcRespBody))
 		S3ErrorResponse(w, "InternalError", "Failed to create bucket on storage", http.StatusInternalServerError)
 		return
 	}
@@ -526,7 +537,6 @@ func handleCreateBucketS3(w http.ResponseWriter, r *http.Request, tenant *Tenant
 	// Record in DB
 	if err := db.CreateBucket(tenant.UserID, userBucketName, internalBucket); err != nil {
 		log.Printf("WARN recording bucket %s in DB: %v", userBucketName, err)
-		// Don't fail — bucket exists on storage, DB record is best-effort
 	}
 
 	// Invalidate rclone VFS cache so ListBuckets/ListObjects sees the new bucket
@@ -539,23 +549,40 @@ func handleCreateBucketS3(w http.ResponseWriter, r *http.Request, tenant *Tenant
 	w.WriteHeader(http.StatusOK)
 }
 
-// handleDeleteBucketS3 deletes a bucket via rclone
+// handleDeleteBucketS3 deletes a bucket via rclone RC API
 func handleDeleteBucketS3(w http.ResponseWriter, r *http.Request, tenant *TenantContext, internalBucket string) {
 	userBucketName := strings.TrimPrefix(internalBucket, tenant.UserID+"--")
+	rcClient := &http.Client{Timeout: 30 * time.Second}
 
-	// Check if bucket has objects (rclone ls)
-	cmd := exec.Command("rclone", "ls", "storagebox:./"+internalBucket, "--max-depth", "1")
-	output, err := cmd.Output()
-	if err == nil && len(strings.TrimSpace(string(output))) > 0 {
-		S3ErrorResponse(w, "BucketNotEmpty", "The bucket you tried to delete is not empty", http.StatusConflict)
-		return
+	// Check if bucket has objects via RC list
+	rcBody := fmt.Sprintf(`{"fs":"storagebox:./%s","remote":""}`, internalBucket)
+	rcReq, _ := http.NewRequest("POST", rcAddr+"/operations/list", strings.NewReader(rcBody))
+	rcReq.Header.Set("Content-Type", "application/json")
+	rcResp, err := rcClient.Do(rcReq)
+	if err == nil {
+		rcRespBody, _ := io.ReadAll(rcResp.Body)
+		rcResp.Body.Close()
+		if strings.Contains(string(rcRespBody), `"Path"`) {
+			S3ErrorResponse(w, "BucketNotEmpty", "The bucket you tried to delete is not empty", http.StatusConflict)
+			return
+		}
 	}
 
-	// Remove from SFTP
-	cmd = exec.Command("rclone", "rmdir", "storagebox:./"+internalBucket)
-	output, err = cmd.CombinedOutput()
+	// Remove via RC rmdir
+	rcBody = fmt.Sprintf(`{"fs":"storagebox:","remote":"./%s"}`, internalBucket)
+	rcReq, _ = http.NewRequest("POST", rcAddr+"/operations/rmdir", strings.NewReader(rcBody))
+	rcReq.Header.Set("Content-Type", "application/json")
+	rcResp, err = rcClient.Do(rcReq)
 	if err != nil {
-		log.Printf("ERROR DeleteBucket rclone rmdir %s: %v: %s", internalBucket, err, string(output))
+		log.Printf("ERROR DeleteBucket RC rmdir %s: %v", internalBucket, err)
+		S3ErrorResponse(w, "InternalError", "Failed to delete bucket", http.StatusInternalServerError)
+		return
+	}
+	defer rcResp.Body.Close()
+
+	if rcResp.StatusCode != 200 {
+		rcRespBody, _ := io.ReadAll(rcResp.Body)
+		log.Printf("ERROR DeleteBucket RC rmdir %s: status=%d body=%s", internalBucket, rcResp.StatusCode, string(rcRespBody))
 		S3ErrorResponse(w, "InternalError", "Failed to delete bucket", http.StatusInternalServerError)
 		return
 	}

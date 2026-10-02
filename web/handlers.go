@@ -3,9 +3,9 @@ package web
 import (
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -271,12 +271,23 @@ func handleCreateBucket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create on SFTP synchronously (rclone mkdir)
-	cmd := exec.Command("rclone", "mkdir", "storagebox:./"+internalName)
-	output, cmdErr := cmd.CombinedOutput()
-	if cmdErr != nil {
-		log.Printf("ERROR creating bucket on SFTP %s: %v: %s", internalName, cmdErr, string(output))
-		// Remove DB record since storage creation failed
+	// Create on SFTP via rclone RC API
+	rcBody := fmt.Sprintf(`{"fs":"storagebox:","remote":"./%s"}`, internalName)
+	rcReq, _ := http.NewRequest("POST", "http://127.0.0.1:9002/operations/mkdir", strings.NewReader(rcBody))
+	rcReq.Header.Set("Content-Type", "application/json")
+	rcClient := &http.Client{Timeout: 30 * time.Second}
+	rcResp, rcErr := rcClient.Do(rcReq)
+	if rcErr != nil {
+		log.Printf("ERROR creating bucket on SFTP %s: %v", internalName, rcErr)
+		db.DeleteBucket(internalName)
+		buckets, _ := db.GetUserBuckets(user.ID)
+		render(w, "buckets.html", map[string]any{"User": user, "Buckets": buckets, "Error": "Failed to create bucket on storage. Please try again."})
+		return
+	}
+	defer rcResp.Body.Close()
+	if rcResp.StatusCode != 200 {
+		rcRespBody, _ := io.ReadAll(rcResp.Body)
+		log.Printf("ERROR creating bucket on SFTP %s: status=%d body=%s", internalName, rcResp.StatusCode, string(rcRespBody))
 		db.DeleteBucket(internalName)
 		buckets, _ := db.GetUserBuckets(user.ID)
 		render(w, "buckets.html", map[string]any{"User": user, "Buckets": buckets, "Error": "Failed to create bucket on storage. Please try again."})
