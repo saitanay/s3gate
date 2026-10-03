@@ -56,34 +56,111 @@ func handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAdminDashboard(w http.ResponseWriter, r *http.Request) {
-	var totalUsers, activeUsers, trialUsers, suspendedUsers int64
+	var totalUsers, activeUsers, trialUsers, suspendedUsers, expiredUsers int64
 	db.DB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&totalUsers)
 	db.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE status='active'`).Scan(&activeUsers)
 	db.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE status='trial'`).Scan(&trialUsers)
 	db.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE status='suspended'`).Scan(&suspendedUsers)
+	db.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE status='expired'`).Scan(&expiredUsers)
 
-	var totalRevenue int64
+	var totalRevenue, totalDeductions int64
 	db.DB.QueryRow(`SELECT COALESCE(SUM(amount_paise),0) FROM transactions WHERE type='recharge'`).Scan(&totalRevenue)
+	db.DB.QueryRow(`SELECT COALESCE(SUM(amount_paise),0) FROM transactions WHERE type='monthly_deduction'`).Scan(&totalDeductions)
+
+	var totalBuckets int64
+	db.DB.QueryRow(`SELECT COUNT(*) FROM buckets`).Scan(&totalBuckets)
+
+	var totalStorage int64
+	db.DB.QueryRow(`SELECT COALESCE(SUM(ud.bytes_stored),0) FROM usage_daily ud INNER JOIN (SELECT user_id, MAX(date) as max_date FROM usage_daily GROUP BY user_id) latest ON ud.user_id = latest.user_id AND ud.date = latest.max_date`).Scan(&totalStorage)
+
+	// Recent transactions (platform-wide)
+	type AdminTxn struct {
+		Email       string
+		Type        string
+		AmountPaise int64
+		Description string
+		CreatedAt   time.Time
+	}
+	var recentTxns []AdminTxn
+	txnRows, err := db.DB.Query(`SELECT u.email, t.type, t.amount_paise, t.description, t.created_at FROM transactions t JOIN users u ON t.user_id = u.id ORDER BY t.created_at DESC LIMIT 15`)
+	if err == nil {
+		defer txnRows.Close()
+		for txnRows.Next() {
+			var t AdminTxn
+			txnRows.Scan(&t.Email, &t.Type, &t.AmountPaise, &t.Description, &t.CreatedAt)
+			recentTxns = append(recentTxns, t)
+		}
+	}
+
+	// Recent signups
+	var recentUsers []db.User
+	userRows, err := db.DB.Query(`SELECT id, email, status, trial_starts_at, trial_expires_at, data_deletion_at, created_at FROM users ORDER BY created_at DESC LIMIT 10`)
+	if err == nil {
+		defer userRows.Close()
+		for userRows.Next() {
+			var u db.User
+			userRows.Scan(&u.ID, &u.Email, &u.Status, &u.TrialStartsAt, &u.TrialExpiresAt, &u.DataDeletionAt, &u.CreatedAt)
+			recentUsers = append(recentUsers, u)
+		}
+	}
+
+	// Paying users (anyone with a recharge transaction)
+	type PayingUser struct {
+		Email       string
+		Status      string
+		TotalPaid   int64
+		Balance     int64
+		LastPayment time.Time
+	}
+	var payingUsers []PayingUser
+	payRows, err := db.DB.Query(`SELECT u.email, u.status, SUM(t.amount_paise) as total_paid, COALESCE(w.balance_paise,0), MAX(t.created_at) FROM transactions t JOIN users u ON t.user_id = u.id LEFT JOIN wallet w ON u.id = w.user_id WHERE t.type='recharge' GROUP BY t.user_id ORDER BY total_paid DESC`)
+	if err == nil {
+		defer payRows.Close()
+		for payRows.Next() {
+			var p PayingUser
+			payRows.Scan(&p.Email, &p.Status, &p.TotalPaid, &p.Balance, &p.LastPayment)
+			payingUsers = append(payingUsers, p)
+		}
+	}
 
 	render(w, "admin_dashboard.html", map[string]any{
-		"TotalUsers":     totalUsers,
-		"ActiveUsers":    activeUsers,
-		"TrialUsers":     trialUsers,
-		"SuspendedUsers": suspendedUsers,
-		"TotalRevenue":   totalRevenue,
+		"TotalUsers":      totalUsers,
+		"ActiveUsers":     activeUsers,
+		"TrialUsers":      trialUsers,
+		"SuspendedUsers":  suspendedUsers,
+		"ExpiredUsers":    expiredUsers,
+		"TotalRevenue":    totalRevenue,
+		"TotalDeductions": totalDeductions,
+		"TotalBuckets":    totalBuckets,
+		"TotalStorage":    totalStorage,
+		"RecentTxns":      recentTxns,
+		"RecentUsers":     recentUsers,
+		"PayingUsers":     payingUsers,
 	})
+}
+
+// AdminUserRow carries enriched per-user data for the users list
+type AdminUserRow struct {
+	db.User
+	Balance     int64
+	BytesUsed   int64
+	BucketCount int64
 }
 
 func handleAdminUsers(w http.ResponseWriter, r *http.Request) {
 	statusFilter := r.URL.Query().Get("status")
 
-	query := `SELECT id, email, status, trial_starts_at, trial_expires_at, data_deletion_at, created_at FROM users`
+	query := `SELECT u.id, u.email, u.status, u.trial_starts_at, u.trial_expires_at, u.data_deletion_at, u.created_at,
+		COALESCE(w.balance_paise, 0),
+		COALESCE((SELECT bytes_stored FROM usage_daily WHERE user_id = u.id ORDER BY date DESC LIMIT 1), 0),
+		(SELECT COUNT(*) FROM buckets WHERE user_id = u.id)
+		FROM users u LEFT JOIN wallet w ON u.id = w.user_id`
 	var args []any
 	if statusFilter != "" {
-		query += ` WHERE status = ?`
+		query += ` WHERE u.status = ?`
 		args = append(args, statusFilter)
 	}
-	query += ` ORDER BY created_at DESC`
+	query += ` ORDER BY u.created_at DESC`
 
 	rows, err := db.DB.Query(query, args...)
 	if err != nil {
@@ -93,10 +170,11 @@ func handleAdminUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var users []db.User
+	var users []AdminUserRow
 	for rows.Next() {
-		var u db.User
-		rows.Scan(&u.ID, &u.Email, &u.Status, &u.TrialStartsAt, &u.TrialExpiresAt, &u.DataDeletionAt, &u.CreatedAt)
+		var u AdminUserRow
+		rows.Scan(&u.ID, &u.Email, &u.Status, &u.TrialStartsAt, &u.TrialExpiresAt, &u.DataDeletionAt, &u.CreatedAt,
+			&u.Balance, &u.BytesUsed, &u.BucketCount)
 		users = append(users, u)
 	}
 
@@ -122,7 +200,8 @@ func handleAdminUserEdit(w http.ResponseWriter, r *http.Request) {
 	balance, _ := db.GetBalance(userID)
 	bytesUsed, _ := db.GetStorageUsed(userID)
 	keys, _ := db.GetAPIKeys(userID)
-	txns, _ := db.GetTransactions(userID, 10)
+	txns, _ := db.GetTransactions(userID, 20)
+	buckets, _ := db.GetUserBuckets(userID)
 
 	render(w, "admin_user_edit.html", map[string]any{
 		"User":         user,
@@ -130,6 +209,7 @@ func handleAdminUserEdit(w http.ResponseWriter, r *http.Request) {
 		"BytesUsed":    bytesUsed,
 		"Keys":         keys,
 		"Transactions": txns,
+		"Buckets":      buckets,
 	})
 }
 

@@ -5,7 +5,7 @@
         <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <span class="font-bold">BucketCheap Admin</span>
             <div class="space-x-4 text-sm">
-                <a href="/admin" class="hover:text-gray-300">Dashboard</a>
+                <a href="/admin" class="hover:text-gray-300 font-medium">Dashboard</a>
                 <a href="/admin/users" class="hover:text-gray-300">Users</a>
             </div>
         </div>
@@ -13,7 +13,9 @@
 
     <div class="max-w-6xl mx-auto px-4 py-8">
         <h1 class="text-2xl font-bold mb-6">Admin Dashboard</h1>
-        <div class="grid md:grid-cols-4 gap-4 mb-8">
+
+        <!-- User Stats -->
+        <div class="grid md:grid-cols-5 gap-4 mb-6">
             <div class="bg-white p-4 rounded-xl border">
                 <p class="text-sm text-gray-500">Total Users</p>
                 <p class="text-2xl font-bold">{{.TotalUsers}}</p>
@@ -30,10 +32,133 @@
                 <p class="text-sm text-gray-500">Suspended</p>
                 <p class="text-2xl font-bold text-red-600">{{.SuspendedUsers}}</p>
             </div>
+            <div class="bg-white p-4 rounded-xl border">
+                <p class="text-sm text-gray-500">Expired</p>
+                <p class="text-2xl font-bold text-gray-500">{{.ExpiredUsers}}</p>
+            </div>
         </div>
-        <div class="bg-white p-4 rounded-xl border">
-            <p class="text-sm text-gray-500">Total Revenue (Recharges)</p>
-            <p class="text-2xl font-bold">{{formatPaise .TotalRevenue}}</p>
+
+        <!-- Platform Stats -->
+        <div class="grid md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-xl border">
+                <p class="text-sm text-gray-500">Revenue (Recharges)</p>
+                <p class="text-2xl font-bold text-green-600">{{formatPaise .TotalRevenue}}</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border">
+                <p class="text-sm text-gray-500">Deductions (Billing)</p>
+                <p class="text-2xl font-bold text-red-600">{{formatPaise .TotalDeductions}}</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border">
+                <p class="text-sm text-gray-500">Total Storage</p>
+                <p class="text-2xl font-bold">{{formatBytes .TotalStorage}}</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border">
+                <p class="text-sm text-gray-500">Total Buckets</p>
+                <p class="text-2xl font-bold">{{.TotalBuckets}}</p>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Paying Customers -->
+            <div class="bg-white rounded-xl border">
+                <div class="px-4 py-3 border-b bg-gray-50 rounded-t-xl">
+                    <h3 class="font-bold text-sm">Paying Customers</h3>
+                </div>
+                {{if .PayingUsers}}
+                <table class="w-full text-sm">
+                    <thead class="border-b">
+                        <tr>
+                            <th class="text-left px-4 py-2 font-medium text-gray-500">Email</th>
+                            <th class="text-left px-4 py-2 font-medium text-gray-500">Status</th>
+                            <th class="text-right px-4 py-2 font-medium text-gray-500">Total Paid</th>
+                            <th class="text-right px-4 py-2 font-medium text-gray-500">Balance</th>
+                            <th class="text-right px-4 py-2 font-medium text-gray-500">Last Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .PayingUsers}}
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-2">{{.Email}}</td>
+                            <td class="px-4 py-2">
+                                {{if eq .Status "active"}}<span class="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">Active</span>
+                                {{else if eq .Status "trial"}}<span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">Trial</span>
+                                {{else if eq .Status "expired"}}<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">Expired</span>
+                                {{else}}<span class="bg-red-50 text-red-700 px-2 py-0.5 rounded text-xs">Suspended</span>{{end}}
+                            </td>
+                            <td class="px-4 py-2 text-right text-green-600 font-medium">{{formatPaise .TotalPaid}}</td>
+                            <td class="px-4 py-2 text-right">{{formatPaise .Balance}}</td>
+                            <td class="px-4 py-2 text-right text-gray-500">{{.LastPayment.Format "Jan 2, 2006"}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                <p class="px-4 py-6 text-sm text-gray-500 text-center">No payments yet.</p>
+                {{end}}
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="bg-white rounded-xl border">
+                <div class="px-4 py-3 border-b bg-gray-50 rounded-t-xl">
+                    <h3 class="font-bold text-sm">Recent Transactions</h3>
+                </div>
+                {{if .RecentTxns}}
+                <div class="divide-y">
+                    {{range .RecentTxns}}
+                    <div class="px-4 py-2 flex justify-between items-center text-sm">
+                        <div>
+                            <span class="text-gray-700">{{.Email}}</span>
+                            <span class="text-gray-400 ml-1">— {{.Description}}</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="{{if eq .Type "recharge"}}text-green-600{{else}}text-red-600{{end}} font-medium">
+                                {{if eq .Type "recharge"}}+{{else}}-{{end}}{{formatPaise .AmountPaise}}
+                            </span>
+                            <span class="text-gray-400 text-xs">{{timeAgo .CreatedAt}}</span>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+                {{else}}
+                <p class="px-4 py-6 text-sm text-gray-500 text-center">No transactions yet.</p>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Recent Signups -->
+        <div class="bg-white rounded-xl border mt-6">
+            <div class="px-4 py-3 border-b bg-gray-50 rounded-t-xl">
+                <h3 class="font-bold text-sm">Recent Signups</h3>
+            </div>
+            {{if .RecentUsers}}
+            <table class="w-full text-sm">
+                <thead class="border-b">
+                    <tr>
+                        <th class="text-left px-4 py-2 font-medium text-gray-500">Email</th>
+                        <th class="text-left px-4 py-2 font-medium text-gray-500">Status</th>
+                        <th class="text-left px-4 py-2 font-medium text-gray-500">Trial Expires</th>
+                        <th class="text-right px-4 py-2 font-medium text-gray-500">Signed Up</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .RecentUsers}}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-2"><a href="/admin/users/edit?id={{.ID}}" class="text-blue-600 hover:underline">{{.Email}}</a></td>
+                        <td class="px-4 py-2">
+                            {{if eq .Status "active"}}<span class="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">Active</span>
+                            {{else if eq .Status "trial"}}<span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">Trial</span>
+                            {{else if eq .Status "expired"}}<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">Expired</span>
+                            {{else}}<span class="bg-red-50 text-red-700 px-2 py-0.5 rounded text-xs">Suspended</span>{{end}}
+                        </td>
+                        <td class="px-4 py-2 text-gray-500">{{if .TrialExpiresAt}}{{.TrialExpiresAt.Format "Jan 2, 2006"}}{{else}}—{{end}}</td>
+                        <td class="px-4 py-2 text-right text-gray-500">{{timeAgo .CreatedAt}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+            {{else}}
+            <p class="px-4 py-6 text-sm text-gray-500 text-center">No users yet.</p>
+            {{end}}
         </div>
     </div>
 </div>
