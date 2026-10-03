@@ -280,6 +280,19 @@ func RewritePathForTenant(r *http.Request, userID string) {
 	if r.URL.RawPath != "" {
 		r.URL.RawPath = r.URL.Path
 	}
+
+	// Rewrite x-amz-copy-source header for CopyObject
+	if copySource := r.Header.Get("X-Amz-Copy-Source"); copySource != "" {
+		cs := strings.TrimPrefix(copySource, "/")
+		csParts := strings.SplitN(cs, "/", 2)
+		if len(csParts) >= 1 && csParts[0] != "" {
+			newSource := "/" + userID + "--" + csParts[0]
+			if len(csParts) == 2 {
+				newSource += "/" + csParts[1]
+			}
+			r.Header.Set("X-Amz-Copy-Source", newSource)
+		}
+	}
 }
 
 // extractAccessKey parses the access key from AWS Authorization header
